@@ -670,17 +670,6 @@ p:last-child {
   box-shadow: 0 0 0 6px rgba(23, 59, 94, 0.13);
 }
 
-.visual-caption {
-  position: absolute;
-  right: 8px;
-  top: 135px;
-  margin: 0;
-  color: #90a8ba;
-  font-size: 12px;
-  line-height: 1.45;
-  text-align: right;
-}
-
 @keyframes visual-card-float {
   0%, 100% {
     transform: translateY(0);
@@ -2773,8 +2762,7 @@ p:last-child {
   }
 
   .hero-visual::before,
-  .network-orbit,
-  .visual-caption {
+  .network-orbit {
     display: none;
   }
 
