@@ -3,6 +3,7 @@
 
   const content = window.DOMIAN_CONTENT || {};
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const transparentPixel = "data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=";
 
   const qs = (selector, scope = document) => scope.querySelector(selector);
   const qsa = (selector, scope = document) => Array.from(scope.querySelectorAll(selector));
@@ -22,10 +23,10 @@
       const prefix = display.startsWith("с ") ? "с " : "";
       const grouping = prefix ? "false" : "true";
       return `
-        <div class="hero-metric">
+        <li class="hero-metric">
           <strong data-counter="${Number(item.value) || 0}" data-prefix="${prefix}" data-grouping="${grouping}">${display}</strong>
           <span>${text(item.label)}</span>
-        </div>`;
+        </li>`;
     }).join("");
   }
 
@@ -39,15 +40,6 @@
         <span>${text(item.label)}</span>
       </article>`).join("");
 
-    if (content.turnover) {
-      const valueNode = qs("#turnover-value");
-      const descriptionNode = qs("#turnover-description");
-      if (valueNode) {
-        const numericValue = Number(content.turnover.value) || 0;
-        valueNode.innerHTML = `<span data-counter="${numericValue}" data-decimals="2" data-suffix=" млн ₽">${text(content.turnover.display)}</span>`;
-      }
-      if (descriptionNode) descriptionNode.textContent = text(content.turnover.description);
-    }
   }
 
   function renderEconomy() {
@@ -67,22 +59,26 @@
     const root = qs("#economy-scenarios");
     if (!root || !Array.isArray(content.economy.scenarios)) return;
 
-    root.innerHTML = content.economy.scenarios.map((scenario, index) => `
-      <article class="scenario-card" data-reveal data-delay="${index * 75}">
-        <span class="scenario-number">0${index + 1}</span>
-        <h3>${text(scenario.title)}</h3>
-        <div class="scenario-row">
-          <span>Оборот<strong>${text(scenario.turnover)}</strong></span>
-          <span class="scenario-result">Результат<strong>${text(scenario.result)}</strong></span>
-        </div>
-        <p class="scenario-note">${text(scenario.note)}</p>
-      </article>`).join("");
+    root.innerHTML = content.economy.scenarios.map((scenario, index) => {
+      const details = Array.isArray(scenario.details) ? scenario.details : [];
+      return `
+        <article class="scenario-card" data-reveal data-delay="${index * 75}">
+          <span class="scenario-number">0${index + 1}</span>
+          <h3>${text(scenario.title)}</h3>
+          <ul class="scenario-details">${details.map((detail) => `<li>${text(detail)}</li>`).join("")}</ul>
+          <div class="scenario-row">
+            <span>Оборот<strong>${text(scenario.turnover)}</strong></span>
+            <span class="scenario-result">${text(scenario.resultLabel || "Результат")}<strong>${text(scenario.result)}</strong></span>
+          </div>
+          <p class="scenario-note">${text(scenario.note)}</p>
+        </article>`;
+    }).join("");
   }
 
   function renderCities() {
     const root = qs("#city-list");
     if (!root || !Array.isArray(content.cities)) return;
-    root.innerHTML = content.cities.map((city) => `<span class="city-tag">${text(city)}</span>`).join("");
+    root.innerHTML = content.cities.map((city) => `<li class="city-tag">${text(city)}</li>`).join("");
   }
 
   function renderConditions() {
@@ -219,7 +215,10 @@
     if (typeof lightbox.close === "function" && lightbox.open) lightbox.close();
     else lightbox.removeAttribute("open");
     document.body.classList.remove("lightbox-open");
-    if (lightboxImage) lightboxImage.removeAttribute("src");
+    if (lightboxImage) {
+      lightboxImage.src = transparentPixel;
+      lightboxImage.alt = "";
+    }
   }
 
   function moveLightbox(direction) {
