@@ -96,7 +96,7 @@ cta: {
 
 ```js
 contacts: {
-  phone: "+7 (863) 300-00-06",
+  phone: "+7 (863) 300-00-04",
   email: "",
   telegram: "",
   whatsapp: "",
