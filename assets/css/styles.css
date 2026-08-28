@@ -92,7 +92,7 @@ p:last-child { margin-bottom: 0; }
 .hero-copy { max-width: 820px; }
 .hero-visual { display: grid; min-width: 0; align-self: center; }
 .stock-photo { position: relative; margin: 0; overflow: hidden; }
-.stock-photo img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.stock-photo img { display: block; width: 100%; height: auto; }
 .stock-photo figcaption { position: absolute; right: 12px; bottom: 12px; padding: 6px 9px; color: rgba(255,255,255,.86); background: rgba(7,25,40,.72); border: 1px solid rgba(255,255,255,.14); border-radius: 999px; font-size: 10px; letter-spacing: .04em; backdrop-filter: blur(6px); }
 .hero-photo { height: 245px; margin: 0 18px; border: 1px solid rgba(255,255,255,.16); border-radius: 26px; box-shadow: 0 24px 60px rgba(2,13,24,.26); }
 .hero-photo img { object-position: center 52%; }
@@ -201,6 +201,7 @@ p:last-child { margin-bottom: 0; }
 .network-steps li > span { display: grid; width: 38px; height: 38px; place-items: center; color: var(--white); background: var(--red); border-radius: 50%; font-weight: 900; }
 .network-steps h3, .network-steps strong { font-size: 18px; }
 .network-steps p { margin-bottom: 0; color: var(--muted); font-size: 14px; }
+.network-photo, .faq-photo, .cta-photo { grid-column: 1 / -1; width: min(100%, 1040px); max-width: 100%; min-width: 0; margin: 0 auto; border-radius: 18px; box-shadow: var(--shadow-soft); }
 .geography-panel { display: grid; grid-template-columns: 310px 1fr; margin-top: 34px; padding: 30px; gap: 34px; color: var(--white); background: var(--navy); border-radius: 20px; }
 .scale-section .geography-panel { width: min(100%, 1040px); margin: 24px auto 0; }
 .geography-panel p { color: #aebfca; font-size: 14px; }
@@ -212,7 +213,7 @@ p:last-child { margin-bottom: 0; }
 .market-number strong { font-family: Georgia, "Times New Roman", serif; font-size: 80px; font-weight: 500; letter-spacing: -.055em; line-height: 1; }
 .market-number span { max-width: 260px; margin-top: 20px; line-height: 1.35; }
 .market-layout > div:nth-child(2) p:not(.eyebrow) { color: var(--muted); }
-.market-photo { grid-column: 1 / -1; height: 330px; border-radius: 22px; box-shadow: var(--shadow); }
+.market-photo { grid-column: 1 / -1; width: min(100%, 920px); max-width: 100%; min-width: 0; margin-inline: auto; border-radius: 18px; box-shadow: var(--shadow); }
 .market-photo img { object-position: center 48%; }
 .training-compact { grid-column: 1 / -1; display: grid; grid-template-columns: 250px 1fr auto; padding: 28px 30px; align-items: center; gap: 28px; background: var(--white); border: 1px solid var(--line); border-radius: 18px; }
 .training-compact h3, .training-compact p { margin-bottom: 0; }
@@ -233,9 +234,9 @@ p:last-child { margin-bottom: 0; }
 .service-categories span { padding: 7px 12px; color: var(--muted); background: var(--white); border: 1px solid var(--line); border-radius: 999px; font-size: 13px; }
 
 .team-section { background: var(--navy-deep); }
-.team-layout { display: grid; grid-template-columns: .85fr 1.15fr; gap: 44px 80px; }
+.team-layout { display: grid; grid-template-columns: minmax(0, .9fr) minmax(420px, 1fr); gap: 44px 80px; align-items: start; }
 .team-layout > div > p:not(.eyebrow) { color: #adbfcb; }
-.team-photo { grid-column: 1 / -1; height: 340px; border: 1px solid rgba(255,255,255,.12); border-radius: 22px; box-shadow: 0 24px 70px rgba(2,13,24,.32); }
+.team-photo { grid-column: 2; grid-row: 1 / span 2; max-width: 100%; min-width: 0; border: 1px solid rgba(255,255,255,.12); border-radius: 18px; box-shadow: 0 24px 70px rgba(2,13,24,.32); }
 .team-photo img { object-position: center 48%; }
 .team-list { display: grid; margin: 0; padding: 0; grid-template-columns: repeat(2, 1fr); gap: 10px; list-style: none; }
 .team-list li { position: relative; min-height: 90px; padding: 19px 18px 19px 47px; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.11); border-radius: 14px; font-size: 14px; font-weight: 700; line-height: 1.4; }
@@ -382,7 +383,7 @@ p:last-child { margin-bottom: 0; }
   .geography-panel { padding: 24px; }
   .market-layout { grid-template-columns: 1fr; }
   .market-number { min-height: 220px; }
-  .market-photo, .team-photo { height: 230px; }
+  .market-photo, .team-photo, .network-photo, .faq-photo, .cta-photo { width: 100%; }
   .training-compact { grid-column: auto; }
   .partner-split { display: grid; min-height: 0; }
   .split-part { width: 100%; min-height: 115px; padding: 20px 24px; }
@@ -465,8 +466,7 @@ h2 { font-size: clamp(38px, 4.1vw, 64px); line-height: 1.04; }
 .hero .button-ghost { color: var(--white); border-color: rgba(255,255,255,.55); background: rgba(255,255,255,.04); }
 .hero .button-ghost:hover { color: var(--red); background: var(--white); }
 .hero-photo { height: auto; margin: 0; overflow: hidden; border: 0; border-radius: 18px; box-shadow: 0 28px 66px rgba(95,0,2,.28); }
-.hero-photo img { aspect-ratio: 3 / 2; object-position: center; }
-.hero-banner img { aspect-ratio: 16 / 9; object-position: center top; }
+.hero-photo img { object-position: center; }
 .hero-visual::before { position: absolute; z-index: -1; inset: -16px 22px 22px -16px; content: ""; border: 1px solid rgba(255,255,255,.35); border-radius: 18px; }
 .hero-proof { position: absolute; left: -34px; bottom: -58px; width: min(385px, 78%); margin: 0; padding: 24px 25px; background: var(--white); border: 0; border-radius: 15px; box-shadow: var(--shadow); backdrop-filter: none; }
 .hero-proof::before { display: none; }
@@ -509,11 +509,6 @@ h2 { font-size: clamp(38px, 4.1vw, 64px); line-height: 1.04; }
 .office-showcase figcaption { position: absolute; right: 0; bottom: 0; left: 0; display: flex; padding: 36px 42px; flex-direction: column; justify-content: flex-end; color: var(--white); background: linear-gradient(0deg, rgba(32,32,32,.82), transparent); }
 .office-showcase figcaption span { margin-bottom: 12px; color: var(--red); font-size: 13px; font-weight: 800; letter-spacing: .13em; text-transform: uppercase; }
 .office-showcase figcaption strong { max-width: 420px; font-size: clamp(30px, 3.2vw, 46px); letter-spacing: -.045em; line-height: 1.05; }
-
-.section-visual { width: 100%; aspect-ratio: 16 / 9; height: auto; margin: 44px 0 0; overflow: hidden; border: 1px solid var(--line); border-radius: 18px; background: var(--cream); box-shadow: var(--shadow-soft); }
-.section-visual img { display: block; width: 100%; height: 100%; object-fit: contain; object-position: center top; filter: saturate(.92) contrast(1.02); }
-.section-dark .section-visual { border-color: rgba(255,255,255,.24); box-shadow: 0 20px 42px rgba(95,0,2,.2); }
-.section-visual-light { background: var(--white); }
 
 .multi-cases { gap: 18px; }
 .multi-case { padding: 34px; border-radius: 17px; box-shadow: 0 10px 30px rgba(32,32,32,.05); }
@@ -561,15 +556,13 @@ h2 { font-size: clamp(38px, 4.1vw, 64px); line-height: 1.04; }
 .conditions-grid article > strong { font-family: inherit; font-weight: 800; }
 .conditions-section .section-cta { color: var(--white); background: transparent; border-color: rgba(255,255,255,.32); }
 .conditions-section .section-cta strong, .conditions-section .section-cta > div > span { color: inherit; }
-.final-cta { isolation: isolate; overflow: hidden; background: var(--ink); }
-.final-cta::before { position: absolute; z-index: -1; inset: 0; content: ""; background: linear-gradient(90deg, rgba(32,32,32,.97) 8%, rgba(32,32,32,.83) 52%, rgba(32,32,32,.56)), url("../images/for-team-08.webp") center 30% / cover; }
+.final-cta { background: var(--ink); }
 .cta-copy p:not(.eyebrow), .contact-note { color: rgba(255,255,255,.7); }
 .faq-layout { grid-template-columns: .7fr 1.3fr; gap: 100px; }
 .faq-list details { border-color: var(--line); }
 .faq-list summary { min-height: 84px; font-weight: 800; }
 .faq-list summary span { color: var(--red); background: transparent; border: 1px solid var(--line); }
-.site-footer { position: relative; isolation: isolate; overflow: hidden; color: rgba(255,255,255,.72); background: var(--ink); }
-.site-footer::before { position: absolute; z-index: -1; inset: 0; content: ""; opacity: .28; background: linear-gradient(90deg, rgba(32,32,32,.96), rgba(32,32,32,.78)), url("../images/for-team-07.webp") center 30% / cover; }
+.site-footer { color: rgba(255,255,255,.62); background: var(--ink); }
 
 @media (max-width: 900px) {
   .header-inner { min-height: 70px; }
@@ -578,9 +571,10 @@ h2 { font-size: clamp(38px, 4.1vw, 64px); line-height: 1.04; }
   .hero-visual { width: min(690px, 92%); margin-inline: auto; }
   .hero-proof { left: 22px; bottom: -45px; }
   .hero-metrics { grid-template-columns: 1fr 1fr; margin-top: 84px; }
+  .faq-layout { grid-template-columns: 1fr; gap: 35px; }
+  .team-photo { grid-column: auto; grid-row: auto; width: min(100%, 680px); margin-inline: auto; }
   .office-showcase { min-height: 420px; }
   .office-showcase img { min-height: 420px; }
-  .section-visual { aspect-ratio: 16 / 9; height: auto; margin-top: 32px; }
   .office-showcase figcaption { padding: 34px; }
   .metric-card, .metric-card:first-child { padding: 25px 0; border-right: 0; border-bottom: 1px solid var(--line); }
   .metric-card:last-child { border-bottom: 0; }
@@ -592,7 +586,6 @@ h2 { font-size: clamp(38px, 4.1vw, 64px); line-height: 1.04; }
   .hero h1 { font-size: clamp(40px, 12.8vw, 54px); }
   .hero-actions .button { width: 100%; }
   .hero-visual { width: 100%; }
-  .hero-photo img { aspect-ratio: 1; }
   .hero-proof { position: relative; left: auto; bottom: auto; width: calc(100% - 22px); margin: -42px auto 0; }
   .hero-metrics { margin-top: 38px; }
   .hero-metric { min-height: 90px; padding: 17px 12px; }
@@ -645,15 +638,9 @@ h2 { font-size: clamp(38px, 4.1vw, 64px); line-height: 1.04; }
   .scale-section .presence-map figcaption { padding: 8px 6px 0; }
   .scale-section .geography-panel { grid-template-columns: 250px 1fr; margin-top: 12px; padding: 16px 18px; gap: 18px; }
   .scale-section .geography-panel p { margin-bottom: 0; }
-  .office-showcase { width: min(100%, 820px); min-height: 160px; height: 160px; margin-top: 12px; }
-  .office-showcase img { min-height: 160px; }
-  .office-showcase figcaption { padding: 16px 22px; }
-  .office-showcase figcaption span { margin-bottom: 4px; font-size: 10px; }
-  .office-showcase figcaption strong { font-size: 24px; }
-  .section-visual { height: 82px; margin-top: 10px; break-inside: avoid; }
-  .hero-photo { height: 165px; }
+  .hero-photo { height: auto; }
   .hero-proof { margin-top: -28px; }
-  .market-photo, .team-photo { height: 165px; }
+  .market-photo, .team-photo { height: auto; }
   .system-section .benefit-grid article { min-height: 170px; padding: 18px 20px; }
   .system-section .benefit-grid article > span { margin-bottom: 16px; }
   .system-section .section-cta { margin-top: 16px; padding: 16px 20px; }
