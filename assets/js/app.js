@@ -9,6 +9,32 @@
   const escapeHtml = (value) => clean(value).replace(/[&<>'"]/g, (character) => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;"
   })[character]);
+  const icons = {
+    building: '<path d="M4 21h16M6 21V5l6-3 6 3v16M9 9h1M14 9h1M9 13h1M14 13h1M10 21v-4h4v4"/>',
+    workspace: '<rect x="3" y="4" width="18" height="15" rx="2"/><path d="M7 8h10M7 12h6M16 16l3 3"/>',
+    shield: '<path d="M12 3 19 6v5c0 4.6-3.1 8.1-7 10-3.9-1.9-7-5.4-7-10V6l7-3Z"/><path d="m9 12 2 2 4-5"/>',
+    education: '<path d="m3 9 9-5 9 5-9 5-9-5Z"/><path d="M7 11v5c2.8 2.4 7.2 2.4 10 0v-5M21 10v5"/>',
+    people: '<circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M16 6.5a3 3 0 0 1 0 5M17 14c2.4.4 4 2.3 4 5"/>',
+    support: '<circle cx="12" cy="12" r="8"/><path d="M12 8v8M8 12h8M5.5 5.5l2 2M16.5 16.5l2 2M18.5 5.5l-2 2M7.5 16.5l-2 2"/>',
+    pin: '<path d="M12 21s6-5.2 6-11a6 6 0 1 0-12 0c0 5.8 6 11 6 11Z"/><circle cx="12" cy="10" r="2"/>',
+    exchange: '<path d="M5 7h12l-3-3M19 17H7l3 3M17 7l2 0M7 17l-2 0"/>',
+    check: '<circle cx="12" cy="12" r="9"/><path d="m8 12 2.7 2.7L16.5 9"/>',
+    calendar: '<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3v4M16 3v4M4 10h16"/>',
+    chart: '<path d="M4 20V4M4 20h17M8 16l3-4 3 2 5-7"/><circle cx="8" cy="16" r="1"/><circle cx="11" cy="12" r="1"/><circle cx="14" cy="14" r="1"/><circle cx="19" cy="7" r="1"/>',
+    rocket: '<path d="M14 4c3.5.3 5.7 2.5 6 6-2.2 2.3-4.7 4.5-7.5 6.3L7.7 21l1.1-4.8C6.7 13.4 4.5 11 3 8.7 5.2 6 8.3 4.2 14 4Z"/><circle cx="15" cy="9" r="2"/><path d="m8.8 16.2-3.7.5.5-3.7M8 19l-3 2M5 15l-2 3"/>',
+    trophy: '<path d="M8 4h8v5a4 4 0 0 1-8 0V4Z"/><path d="M8 6H4v1a4 4 0 0 0 4 4M16 6h4v1a4 4 0 0 1-4 4M12 13v5M8 21h8M9 18h6"/>',
+    network: '<circle cx="5" cy="12" r="2"/><circle cx="19" cy="6" r="2"/><circle cx="19" cy="18" r="2"/><path d="m7 11 10-4M7 13l10 4"/>',
+    wallet: '<path d="M4 7h15a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h12"/><path d="M16 13h3"/>',
+    document: '<path d="M6 3h8l4 4v14H6z"/><path d="M14 3v5h5M9 13h6M9 17h4"/>'
+  };
+  function icon(name, className = "") {
+    const path = icons[name] || icons.check;
+    return `<svg class="ui-icon ${escapeHtml(className)}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${path}</svg>`;
+  }
+
+  function renderStaticIcons() {
+    qsa("[data-icon]").forEach((node) => { node.innerHTML = icon(node.dataset.icon || "check"); });
+  }
 
   function safeLocalPdf(value) {
     const path = clean(value);
@@ -40,17 +66,19 @@
   function renderHeroMetrics() {
     const root = qs("#hero-metrics");
     if (!root || !Array.isArray(content.heroMetrics)) return;
-    root.innerHTML = content.heroMetrics.map((item) => `
-      <li class="hero-metric"><strong>${escapeHtml(item.display)}</strong><span>${escapeHtml(item.label)}</span></li>
+    const metricIcons = ["building", "calendar", "chart", "rocket"];
+    root.innerHTML = content.heroMetrics.map((item, index) => `
+      <li class="hero-metric">${icon(metricIcons[index], "hero-metric-icon")}<strong>${escapeHtml(item.display)}</strong><span>${escapeHtml(item.label)}</span></li>
     `).join("");
   }
 
   function renderNetworkMetrics() {
     const root = qs("#network-metrics");
     if (!root || !Array.isArray(content.networkMetrics)) return;
+    const metricIcons = ["building", "calendar", "pin"];
     root.innerHTML = content.networkMetrics.map((item, index) => `
       <article class="metric-card" data-reveal data-delay="${index * 70}">
-        <strong>${escapeHtml(item.display)}</strong><h3>${escapeHtml(item.label)}</h3><p>${escapeHtml(item.note)}</p>
+        ${icon(metricIcons[index], "metric-icon")}<strong>${escapeHtml(item.display)}</strong><h3>${escapeHtml(item.label)}</h3><p>${escapeHtml(item.note)}</p>
       </article>
     `).join("");
   }
@@ -74,7 +102,7 @@
       return `
         <section class="performance-panel" id="performance-panel-${escapeHtml(key)}" role="tabpanel"
           aria-labelledby="performance-tab-${escapeHtml(key)}" ${periodIndex ? "hidden" : ""}>
-          <div class="performance-highlight">
+          <div class="performance-highlight">${icon("trophy", "performance-icon")}
             <p>${escapeHtml(period.caption)}</p><strong>${escapeHtml(period.leader)}</strong>
             <span>${escapeHtml(period.leaderNote)}</span><em>${escapeHtml(period.monthly)}</em>
           </div>
@@ -115,7 +143,7 @@
     const root = qs("#multi-office-cases");
     if (!root || !Array.isArray(content.multiOfficeCases)) return;
     root.innerHTML = content.multiOfficeCases.map((item, index) => `
-      <article class="multi-case" data-reveal data-delay="${index * 90}">
+      <article class="multi-case" data-reveal data-delay="${index * 90}">${icon("network", "case-icon")}
         <p class="eyebrow">${escapeHtml(item.eyebrow)}</p><h3>${escapeHtml(item.headline)}</h3>
         <div class="case-periods">
           <div><span>2025</span><strong>${escapeHtml(item.year2025)}</strong><small>совокупный комиссионный оборот ${escapeHtml(item.offices)} офисов</small></div>
@@ -130,13 +158,13 @@
     const split = content.partnerServicesSplit || {};
     if (!root) return;
     const items = [
-      { value: split.agent, label: "агенту", className: "agent" },
-      { value: split.owner, label: "собственнику офиса", className: "owner" },
-      { value: split.centralOffice, label: "центральному офису", className: "central" }
+      { value: split.agent, label: "агенту", className: "agent", icon: "people" },
+      { value: split.owner, label: "собственнику офиса", className: "owner", icon: "wallet" },
+      { value: split.centralOffice, label: "центральному офису", className: "central", icon: "building" }
     ];
     root.innerHTML = items.map((item) => `
       <div class="split-part split-${item.className}" style="--split:${Number(item.value) || 0}">
-        <strong>${Number(item.value) || 0}%</strong><span>${escapeHtml(item.label)}</span>
+        ${icon(item.icon, "split-icon")}<strong>${Number(item.value) || 0}%</strong><span>${escapeHtml(item.label)}</span>
       </div>
     `).join("");
   }
@@ -144,9 +172,10 @@
   function renderLaunchSteps() {
     const root = qs("#launch-steps");
     if (!root || !Array.isArray(content.launchSteps)) return;
+    const stepIcons = ["pin", "document", "workspace", "education", "rocket"];
     root.innerHTML = content.launchSteps.map((item, index) => `
       <li data-reveal data-delay="${index * 55}">
-        <span>${String(index + 1).padStart(2, "0")}</span><div><h3>${escapeHtml(item.title)}</h3><p>${escapeHtml(item.text)}</p></div>
+        <span>${icon(stepIcons[index], "launch-icon")}${String(index + 1).padStart(2, "0")}</span><div><h3>${escapeHtml(item.title)}</h3><p>${escapeHtml(item.text)}</p></div>
       </li>
     `).join("");
   }
@@ -154,9 +183,10 @@
   function renderConditions() {
     const root = qs("#conditions-grid");
     if (!root || !Array.isArray(content.conditions)) return;
+    const conditionIcons = ["chart", "wallet", "document", "building", "rocket"];
     root.innerHTML = content.conditions.map((item, index) => `
       <article data-reveal data-delay="${index * 50}">
-        <strong>${escapeHtml(item.value)}</strong><h3>${escapeHtml(item.label)}</h3><p>${escapeHtml(item.note)}</p>
+        ${icon(conditionIcons[index], "condition-icon")}<strong>${escapeHtml(item.value)}</strong><h3>${escapeHtml(item.label)}</h3><p>${escapeHtml(item.note)}</p>
       </article>
     `).join("");
   }
@@ -319,7 +349,7 @@
   }
 
   function initialize() {
-    renderCtaLabels(); renderPdfLinks(); renderHeroMetrics(); renderNetworkMetrics(); renderPerformance();
+    renderCtaLabels(); renderPdfLinks(); renderStaticIcons(); renderHeroMetrics(); renderNetworkMetrics(); renderPerformance();
     renderMultiOfficeCases(); renderPartnerSplit(); renderLaunchSteps(); renderConditions(); renderCities();
     renderContacts(); renderSocialLinks(); configurePerformanceTabs(); configureMenu(); configureHeader(); configureStickyCta();
     configureFaq(); configureActiveNavigation(); configureReveal();
