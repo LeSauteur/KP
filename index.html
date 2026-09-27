@@ -15,9 +15,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
-  <link rel="stylesheet" href="assets/css/styles.css?v=20260927-blueprint3">
-  <script src="assets/js/content.js?v=20260927-blueprint3" defer></script>
-  <script src="assets/js/app.js?v=20260927-blueprint3" defer></script>
+  <link rel="stylesheet" href="assets/css/styles.css?v=20260927-final1">
+  <script src="assets/js/content.js?v=20260927-final1" defer></script>
+  <script src="assets/js/app.js?v=20260927-final1" defer></script>
 </head>
 <body>
   <a class="skip-link" href="#main-content">Перейти к содержанию</a>
@@ -109,6 +109,29 @@
             </div>
           </figure>
         </div>
+        <div class="model" aria-labelledby="model-title">
+          <div class="model-head">
+            <h3 id="model-title">Как работает экономика офиса</h3>
+            <p>Агенты работают с клиентами и проводят сделки. Офис получает комиссию, из неё учитываются выплаты команде, роялти и расходы. Собственник управляет итоговой экономикой офиса.</p>
+          </div>
+          <ol class="model-flow" aria-label="Путь денег в офисе">
+            <li><span class="box">Клиент</span><span class="arr" aria-hidden="true">→</span></li>
+            <li><span class="box">Агент</span><span class="arr" aria-hidden="true">→</span></li>
+            <li><span class="box">Сделка</span><span class="arr" aria-hidden="true">→</span></li>
+            <li><span class="box">Комиссия офиса</span><span class="arr" aria-hidden="true">→</span></li>
+            <li><span class="box">Выплаты команде, роялти, расходы</span><span class="arr" aria-hidden="true">→</span></li>
+            <li class="is-yours"><span class="box">Результат собственника</span></li>
+          </ol>
+          <div class="model-roles">
+            <p class="model-roles-title">Откуда берутся клиенты</p>
+            <dl>
+              <div><dt>Сеть</dt><dd>Рабочие каналы по поиску клиентов и эксклюзивам, ипотека, новостройки и возможность передать запрос коллегам</dd></div>
+              <div><dt>CRM</dt><dd>Инструмент ведения клиентов и учёта реферальных связей, а не источник гарантированных заявок</dd></div>
+              <div><dt>Офис</dt><dd>Своя территория, команда агентов, локальное продвижение, входящие обращения и работа с клиентами</dd></div>
+              <div class="is-yours"><dt>Собственник</dt><dd>Управляет командой, продажами, экономикой и продвижением офиса</dd></div>
+            </dl>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -120,20 +143,65 @@
             <p class="kicker"><span class="kicker-num">03</span>Сеть</p>
             <h2 id="network-title">Агент знает свой район. Сеть знает весь город.</h2>
           </div>
-          <p>Если клиенту нужен другой район или город, его передают коллеге из сети — клиент остаётся в Dомиан.</p>
+          <p>Если клиенту нужен другой район или город, агент может найти коллегу сети и передать ему следующий этап работы.</p>
         </header>
         <div class="network-layout">
           <div class="network-copy">
             <dl class="metrics" id="network-metrics"></dl>
             <ol class="route-steps">
-              <li><span>01</span><div><strong>Локальная экспертиза</strong><p>Агент становится специалистом своей территории.</p></div></li>
-              <li><span>02</span><div><strong>Передача запроса</strong><p>Другую территорию принимает соответствующий специалист сети.</p></div></li>
-              <li><span>03</span><div><strong>Клиент остаётся в системе</strong><p>Вознаграждение распределяется по действующим правилам сети.</p></div></li>
+              <li><span>01</span><div><strong>Своя территория</strong><p>Агент работает со своим районом и становится специалистом этой территории.</p></div></li>
+              <li><span>02</span><div><strong>Передача коллегам</strong><p>Если запрос выходит за территорию, его можно передать коллегам через рабочие каналы сети: поиск клиентов, эксклюзивы, ипотека, новостройки.</p></div></li>
+              <li><span>03</span><div><strong>Учёт связи</strong><p>Реферальная связь может учитываться в CRM сети. Передача и реферальные связи оформляются по действующим правилам сети.</p></div></li>
             </ol>
+            <aside class="field-note" aria-label="Рабочий сценарий из сети">
+              <p class="field-note-label">Рабочий сценарий из сети</p>
+              <p>Агент работает с клиентом, которому нужно продать объект и затем купить другой. Для следующего этапа агент ищет в рабочем канале коллегу сети, которому можно передать запрос. Так запрос можно направить специалисту, который работает с нужной задачей или территорией.</p>
+            </aside>
           </div>
           <figure class="density">
-            <div id="density-map" class="density-map" role="img" aria-label="Условная схема: город разделён на районы, в большинстве районов работает офис сети. Запрос клиента передаётся из вашего района в район клиента."></div>
-            <figcaption>Схема условная: районы и точки не соответствуют реальным адресам.</figcaption>
+            <div class="density-map" role="img" aria-label="Схема географии присутствия Dомиан: выделены Ростовская область, Краснодарский край и Крым. Сотовая сетка показывает связь территорий, маршрут — как запрос можно направить из одной территории в другую через сеть.">
+              <svg class="network-map-svg" viewBox="0 0 2130 970" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg" focusable="false" aria-hidden="true">
+                <defs>
+                  <polygon id="network-hex" points="0,-54 46,-27 46,27 0,54 -46,27 -46,-27"></polygon>
+                  <marker id="network-arrow" markerWidth="14" markerHeight="14" refX="11" refY="7" orient="auto" markerUnits="strokeWidth">
+                    <path d="M1 1 12 7 1 13Z"></path>
+                  </marker>
+                </defs>
+                <image href="assets/images/presence-map.png" x="0" y="0" width="2130" height="970" preserveAspectRatio="none"></image>
+                <g class="network-hexes" aria-hidden="true">
+                  <use href="#network-hex" transform="translate(1080 425)"></use>
+                  <use href="#network-hex" transform="translate(988 425)"></use>
+                  <use href="#network-hex" transform="translate(1034 344)"></use>
+                  <use href="#network-hex" transform="translate(1126 344)"></use>
+                  <use href="#network-hex" transform="translate(1172 425)"></use>
+                  <use href="#network-hex" transform="translate(1126 506)"></use>
+                  <use href="#network-hex" transform="translate(1034 506)"></use>
+                  <use href="#network-hex" transform="translate(1020 690)"></use>
+                  <use href="#network-hex" transform="translate(928 690)"></use>
+                  <use href="#network-hex" transform="translate(974 609)"></use>
+                  <use href="#network-hex" transform="translate(1066 609)"></use>
+                  <use href="#network-hex" transform="translate(1112 690)"></use>
+                  <use href="#network-hex" transform="translate(1066 771)"></use>
+                  <use href="#network-hex" transform="translate(974 771)"></use>
+                </g>
+                <path class="network-route" pathLength="1" marker-end="url(#network-arrow)" d="M1080 430 C1370 470 1360 640 1030 680"></path>
+                <g class="network-node network-node-source" transform="translate(1080 430)">
+                  <circle r="20"></circle><circle r="7"></circle>
+                </g>
+                <g class="network-node network-node-target" transform="translate(1030 680)">
+                  <circle r="20"></circle><circle r="7"></circle>
+                </g>
+              </svg>
+              <span class="network-map-label network-map-label-source" aria-hidden="true">ваша территория</span>
+              <span class="network-map-label network-map-label-route" aria-hidden="true">запрос в сеть</span>
+              <span class="network-map-label network-map-label-target" aria-hidden="true">территория клиента</span>
+            </div>
+            <ul class="network-map-legend" aria-label="Условные обозначения карты">
+              <li><span class="legend-region" aria-hidden="true"></span>география присутствия</li>
+              <li><span class="legend-hex" aria-hidden="true"></span>связь территорий</li>
+              <li><span class="legend-route" aria-hidden="true"></span>запрос в сеть</li>
+            </ul>
+            <figcaption>Схема условная: точки не соответствуют реальным адресам, маршрут показывает механизм передачи запроса.</figcaption>
           </figure>
         </div>
         <div class="geography">
@@ -157,7 +225,7 @@
             <p class="kicker"><span class="kicker-num">04</span>Партнёрские услуги</p>
             <h2 id="services-title">Дополнительный доход собственнику + дополнительная мотивация агенту</h2>
           </div>
-          <p>Распределяется только комиссия от партнёрских услуг — не вся комиссия агентства. Партнёрская комиссия распределяется прозрачно после выполнения услуги.</p>
+          <p>После сделки клиенту часто нужны страхование, оценка, ремонт, дизайн, мебель, переезд или клининг. Агент передаёт клиента партнёру сети, передача фиксируется, а после выполнения услуги партнёрская комиссия распределяется по схеме 40 / 30 / 30. Схема относится только к комиссии от партнёрской услуги, не к комиссии агентства.</p>
         </header>
         <div class="split" id="partner-split" aria-label="Распределение комиссии от партнёрской услуги"></div>
         <ul class="chips" id="service-list" aria-label="Категории партнёрских услуг"></ul>
@@ -260,7 +328,8 @@
           <a class="text-link" data-pdf hidden><span data-cta-label="pdf">Скачать подробное КП</span></a>
         </div>
         <div class="faq-list">
-          <details><summary>Чем франшиза отличается от самостоятельного агентства?<span aria-hidden="true"></span></summary><p>Партнёр получает не только бренд, но и собственную CRM с базой клиентов и объектов, юридическую и ипотечную поддержку, централизованное обучение, HR, безопасность, маркетинг, IT / HelpDesk, работу с застройщиками и управленческую систему.</p></details>
+          <details><summary>Чем франшиза отличается от самостоятельного агентства?<span aria-hidden="true"></span></summary><p>Партнёр подключается к работающей системе: CRM с базой клиентов и объектов, направление новостроек, юридическое и ипотечное сопровождение сделок, партнёрские сервисы, инструменты управления экономикой офиса, найм и обучение агентов, франшизный отдел и IT, а также сеть коллег для передачи запросов.</p></details>
+          <details><summary>Откуда у офиса появляются клиенты?<span aria-hidden="true"></span></summary><p>Офис работает со своей территорией, входящими обращениями и локальным продвижением. Сеть дополняет это рабочими каналами по поиску клиентов и эксклюзивам, ипотеке и новостройкам, а также возможностью передать запрос коллегам или получить его от них. CRM помогает вести клиентов и учитывать реферальные связи, но не создаёт гарантированный поток заявок.</p></details>
           <details><summary>Можно ли масштабироваться до нескольких офисов?<span aria-hidden="true"></span></summary><p>Да, внутри сети есть реальные многоофисные партнёры. Возможность второго офиса зависит от результатов первого, готовности команды и опыта партнёра в управлении.</p></details>
           <details><summary>Какие результаты показывают действующие франшизные офисы?<span aria-hidden="true"></span></summary><p>В 2025 году ведущие франшизные офисы показали от 30,7 до 60,2 млн ₽ комиссионного оборота среди ТОП-5. В I полугодии 2026 года показатель лидера составил 44,4 млн ₽. Комиссионный оборот не является прибылью собственника.</p></details>
           <details><summary>Как рассчитывается роялти?<span aria-hidden="true"></span></summary><p>Ставка уменьшается по мере роста ежемесячного комиссионного оборота и может снижаться до 3%. Диапазон ставок — от 7% до 3%.</p></details>
