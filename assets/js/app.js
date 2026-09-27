@@ -320,7 +320,7 @@
         return `<li class="rank-row"><span class="rank-place">${escapeHtml(item.rank)} место</span><span class="rank-track" aria-hidden="true"><i style="--w:${width.toFixed(2)}%"></i></span><strong>${escapeHtml(item.display)}</strong></li>`;
       }).join("");
       return `<section class="panel" id="performance-panel-${escapeHtml(key)}" role="tabpanel" aria-labelledby="performance-tab-${escapeHtml(key)}" ${periodIndex ? "hidden" : ""}>
-        <div class="panel-lead"><p>${escapeHtml(period.caption)}</p><strong>${escapeHtml(period.leader)}${noteRef("results")}</strong><span>${escapeHtml(period.leaderNote)}</span><em>${escapeHtml(period.monthly)}</em></div>
+        <div class="panel-lead"><p>${escapeHtml(period.caption)}</p><strong>${escapeHtml(period.leader)}${noteRef("results")}</strong><span>${escapeHtml(period.leaderNote)}</span>${clean(period.monthly) ? `<em>${escapeHtml(period.monthly)}</em>` : ""}</div>
         <ol class="rank" aria-label="ТОП-5 франшизных офисов по комиссионному обороту">${rows}</ol>
       </section>`;
     }).join("");
