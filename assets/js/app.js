@@ -187,7 +187,7 @@
     if (!root) return;
     root.innerHTML = modules.map((m, i) => {
       const artifact = m.artifact && clean(m.artifact.src)
-        ? `<div><dt>Доказательство</dt><dd><figure class="artifact"><img src="${escapeHtml(m.artifact.src)}" alt="${escapeHtml(m.artifact.alt)}" loading="lazy" decoding="async"><figcaption>${escapeHtml(m.artifact.caption)}</figcaption></figure></dd></div>`
+        ? `<div><dt>Доказательство</dt><dd><figure class="artifact"><a href="${escapeHtml(m.artifact.src)}" target="_blank" rel="noopener" aria-label="Открыть экран в полном размере"><img src="${escapeHtml(m.artifact.src)}" alt="${escapeHtml(m.artifact.alt)}" width="1200" height="1100" loading="lazy" decoding="async"></a><figcaption>${escapeHtml(m.artifact.caption)}</figcaption></figure></dd></div>`
         : "";
       return `<article class="step" data-i="${i}">
         <p class="step-meta tone-${m.contour + 1}">${pad(i + 1)} / ${pad(modules.length)} · Направление ${m.contour + 1} · ${escapeHtml(contours[m.contour])}</p>
