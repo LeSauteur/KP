@@ -166,7 +166,7 @@ sup.fn a:hover { color: var(--red); }
 .artifact figcaption { margin-top: 8px; color: var(--ink-2); font-family: var(--mono); font-size: 12px; }
 .contour-list { display: grid; margin-bottom: 28px; border-bottom: 1px solid var(--faint); }
 .contour-list li { display: flex; gap: 18px; padding: 12px 0; border-top: 1px solid var(--faint); font-weight: 500; }
-.contour-list span { width: 90px; color: var(--ink-2); font-family: var(--mono); font-size: 13px; font-weight: 400; }
+.contour-list span { flex: 0 0 120px; color: var(--ink-2); font-family: var(--mono); font-size: 13px; font-weight: 400; }
 .step blockquote { max-width: 440px; padding-left: 20px; border-left: 2px solid var(--red); font-size: 22px; line-height: 1.35; }
 .system-figure { position: relative; }
 .system-sticky { position: sticky; top: calc(var(--header) + 32px); }

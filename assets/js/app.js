@@ -49,7 +49,7 @@
   const TALL = [0.45, 0.7, 0.7, 0.7, 0.45, 0.2, 0.2, 0.2];
   const OUTLINES = [
     { pts: [[0, 0], [3, 0], [3, 1], [1, 1], [1, 2], [0, 2]], label: [-0.9, -0.3], anchor: "end" },
-    { pts: [[2, 1], [3, 1], [3, 3], [2, 3]], label: [3.3, 2.2], anchor: "start" },
+    { pts: [[2, 1], [3, 1], [3, 3], [2, 3]], label: [3.06, 2.77], anchor: "start" },
     { pts: [[0, 2], [2, 2], [2, 3], [0, 3]], label: [3.4, 3.4], anchor: "middle" }
   ];
 
@@ -102,7 +102,7 @@
       floor += I.poly(o.pts.map(([x, y]) => [x, y, 0]), TONES[index].wash, TONES[index].ink, 1.2, 'stroke-dasharray="2 6" class="iso-contour"');
       if (contourLabels && contours[index]) {
         const [a, b] = I.p(o.label[0], o.label[1]);
-        floor += `<text x="${a.toFixed(1)}" y="${b.toFixed(1)}" text-anchor="${o.anchor}" class="iso-text iso-contour-label" font-size="15" fill="${TONES[index].ink}">КОНТУР ${index + 1} · ${escapeHtml(contours[index].toUpperCase())}</text>`;
+        floor += `<text x="${a.toFixed(1)}" y="${b.toFixed(1)}" text-anchor="${o.anchor}" class="iso-text iso-contour-label" font-size="15" fill="${TONES[index].ink}">НАПРАВЛЕНИЕ ${index + 1} · ${escapeHtml(contours[index].toUpperCase())}</text>`;
       }
     });
     const cells = SLOTS.map(([i, j], n) => ({ i, j, n, order: i + j })).concat([{ i: 1, j: 1, n: -1, order: 2 }]);
@@ -124,8 +124,7 @@
     if (legend) {
       const lx = I.p(0, 3)[0] + 30, ly = I.p(3, 3)[1] + 30;
       legendSvg = `<rect x="${lx}" y="${ly - 11}" width="16" height="12" fill="none" stroke="${RED}" stroke-width="2"></rect>` +
-        `<text x="${lx + 26}" y="${ly}" class="iso-text" font-size="${labels === "full" ? 15 : 24}" fill="${RED}">ВАШ ОФИС</text>` +
-        `<text x="${lx + 26}" y="${ly + (labels === "full" ? 20 : 30)}" class="iso-text" font-size="${labels === "full" ? 14 : 22}" fill="${INK2}">стартовый модуль</text>`;
+        `<text x="${lx + 26}" y="${ly}" class="iso-text" font-size="${labels === "full" ? 15 : 24}" fill="${RED}">ВАШ ОФИС</text>`;
     }
     return `<svg viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg" focusable="false">${floor}${body}${legendSvg}</svg>`;
   }
@@ -171,8 +170,8 @@
     const modules = content.modules || [];
     const contours = content.contours || [];
     if (legend) {
-      if (s.final) legend.textContent = `${pad(modules.length)} / ${pad(modules.length)} · все контуры подключены`;
-      else if (s.current >= 0) legend.textContent = `${pad(s.current + 1)} / ${pad(modules.length)} · Контур ${modules[s.current].contour + 1} · ${contours[modules[s.current].contour] || ""}`;
+      if (s.final) legend.textContent = `${pad(modules.length)} / ${pad(modules.length)} · все направления подключены`;
+      else if (s.current >= 0) legend.textContent = `${pad(s.current + 1)} / ${pad(modules.length)} · Направление ${modules[s.current].contour + 1} · ${contours[modules[s.current].contour] || ""}`;
       else legend.textContent = `00 / ${pad(modules.length)} · только ваш офис`;
     }
     qsa(".step", qs("#system-steps")).forEach((step) => {
@@ -191,14 +190,14 @@
         ? `<div><dt>Доказательство</dt><dd><figure class="artifact"><img src="${escapeHtml(m.artifact.src)}" alt="${escapeHtml(m.artifact.alt)}" loading="lazy" decoding="async"><figcaption>${escapeHtml(m.artifact.caption)}</figcaption></figure></dd></div>`
         : "";
       return `<article class="step" data-i="${i}">
-        <p class="step-meta tone-${m.contour + 1}">${pad(i + 1)} / ${pad(modules.length)} · Контур ${m.contour + 1} · ${escapeHtml(contours[m.contour])}</p>
+        <p class="step-meta tone-${m.contour + 1}">${pad(i + 1)} / ${pad(modules.length)} · Направление ${m.contour + 1} · ${escapeHtml(contours[m.contour])}</p>
         <h3>${escapeHtml(m.action)}</h3>
         <dl class="grammar"><div><dt>Не строите сами</dt><dd>${escapeHtml(m.notBuild)}</dd></div><div><dt>Внутри</dt><dd>${escapeHtml(m.inside)}</dd></div>${artifact}</dl>
       </article>`;
     }).join("") + `<article class="step step-final" data-final="true">
         <p class="step-meta">${pad(modules.length)} / ${pad(modules.length)} · система подключена</p>
-        <h3>Ключевые контуры уже работают</h3>
-        <ul class="contour-list">${contours.map((c, k) => `<li class="tone-${k + 1}"><span>Контур ${k + 1}</span>${escapeHtml(c)}</li>`).join("")}</ul>
+        <h3>Эти процессы уже работают в сети</h3>
+        <ul class="contour-list">${contours.map((c, k) => `<li class="tone-${k + 1}"><span>Направление ${k + 1}</span>${escapeHtml(c)}</li>`).join("")}</ul>
         <blockquote>Вы покупаете не набор сервисов, а годы уже проделанной организационной работы.</blockquote>
       </article>`;
   }
@@ -321,7 +320,7 @@
         return `<li class="rank-row"><span class="rank-place">${escapeHtml(item.rank)} место</span><span class="rank-track" aria-hidden="true"><i style="--w:${width.toFixed(2)}%"></i></span><strong>${escapeHtml(item.display)}</strong></li>`;
       }).join("");
       return `<section class="panel" id="performance-panel-${escapeHtml(key)}" role="tabpanel" aria-labelledby="performance-tab-${escapeHtml(key)}" ${periodIndex ? "hidden" : ""}>
-        <div class="panel-lead"><p>${escapeHtml(period.caption)}</p><strong>${escapeHtml(period.leader)}${noteRef("results")}</strong><span>${escapeHtml(period.leaderNote)}</span><em>${escapeHtml(period.monthly)}</em></div>
+        <div class="panel-lead"><p>${escapeHtml(period.caption)}</p><strong>${escapeHtml(period.leader)}${noteRef("results")}</strong><span>${escapeHtml(period.leaderNote)}</span>${clean(period.monthly) ? `<em>${escapeHtml(period.monthly)}</em>` : ""}</div>
         <ol class="rank" aria-label="ТОП-5 франшизных офисов по комиссионному обороту">${rows}</ol>
       </section>`;
     }).join("");
