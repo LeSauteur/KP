@@ -536,6 +536,12 @@
     targets.forEach((t) => observer.observe(t));
   }
 
+  // На телефоне блок «Откуда берутся клиенты» свёрнут, чтобы не удлинять страницу.
+  function configureModelRoles() {
+    const roles = qs(".model-roles");
+    if (roles && window.matchMedia("(max-width: 700px)").matches) roles.open = false;
+  }
+
   function initialize() {
     renderCtaLabels(); renderPdfLinks();
     renderFacts("#hero-facts", content.heroFacts, "fact");
@@ -546,7 +552,7 @@
     renderSplit(); renderPerformance(); configureTabs(); renderCases();
     renderLaunch(); renderConditions(); renderStoriesAndTeam();
     renderContacts(); renderSocialLinks(); renderNotes();
-    configureMenu(); configureScrollChrome(); configureActiveNav(); configureInView();
+    configureModelRoles(); configureMenu(); configureScrollChrome(); configureActiveNav(); configureInView();
     requestAnimationFrame(() => doc.classList.add("is-loaded"));
     let lastSmall = null;
     window.addEventListener("resize", () => {
