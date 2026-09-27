@@ -165,7 +165,7 @@
   let systemState = { built: 0, current: -1, final: false };
   function applySystemState() {
     const root = qs("#system-iso");
-    const s = desktopScene.matches && !reducedMotion ? systemState : { built: 8, current: -1, final: true };
+    const s = !reducedMotion ? systemState : { built: 8, current: -1, final: true };
     setIsoState(root, s.built, s.current, s.final);
     const legend = qs("#system-legend");
     const modules = content.modules || [];

@@ -492,3 +492,18 @@ sup.fn a:hover { color: var(--red); }
   .photo-strip img { aspect-ratio: 4 / 3; flex: none; }
   .section-red .final-side { padding: 20px; }
 }
+
+/* ---------- Mobile/tablet: compact sticky plan assembles while module cards scroll ---------- */
+@media (max-width: 1023px) {
+  .system-layout { gap: 8px; }
+  .system-figure { position: sticky; z-index: 5; top: var(--header); align-self: start; margin-inline: calc(var(--gutter) * -1); padding: 8px var(--gutter) 10px; background: var(--paper); border-bottom: 1px solid var(--line); }
+  .system-figure .iso { width: min(100%, 290px); margin-inline: auto; }
+  .system-legend { justify-content: space-between; margin-top: 2px; font-size: 12px; }
+  .system-legend .office-key { font-size: 12px; }
+  .step { padding-top: 24px; }
+  .step:last-child { padding-bottom: 40vh; }
+}
+@media (max-width: 1023px) and (prefers-reduced-motion: reduce) {
+  .system-figure { position: static; }
+  .step:last-child { padding-bottom: 32px; }
+}
