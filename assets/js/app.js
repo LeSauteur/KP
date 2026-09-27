@@ -187,7 +187,7 @@
     if (!root) return;
     root.innerHTML = modules.map((m, i) => {
       const artifact = m.artifact && clean(m.artifact.src)
-        ? `<div><dt>Доказательство</dt><dd><figure class="artifact"><a href="${escapeHtml(m.artifact.src)}" target="_blank" rel="noopener" aria-label="Открыть экран в полном размере"><img src="${escapeHtml(m.artifact.src)}" alt="${escapeHtml(m.artifact.alt)}" width="1200" height="1100" loading="lazy" decoding="async"></a><figcaption>${escapeHtml(m.artifact.caption)}</figcaption></figure></dd></div>`
+        ? `<div><dt>Доказательство</dt><dd><figure class="artifact"><img src="${escapeHtml(m.artifact.src)}" alt="${escapeHtml(m.artifact.alt)}" loading="lazy" decoding="async"><figcaption>${escapeHtml(m.artifact.caption)}</figcaption></figure></dd></div>`
         : "";
       return `<article class="step" data-i="${i}">
         <p class="step-meta tone-${m.contour + 1}">${pad(i + 1)} / ${pad(modules.length)} · Направление ${m.contour + 1} · ${escapeHtml(contours[m.contour])}</p>
@@ -228,65 +228,6 @@
       });
     }, { threshold: [0, 0.2] });
     if (section) reset.observe(section);
-  }
-
-  /* ---------------------------------------------------------------- density map */
-  function mulberry(seed) {
-    return function () {
-      seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
-      let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
-      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-    };
-  }
-  function renderDensity() {
-    const root = qs("#density-map");
-    if (!root) return;
-    const W = 640, H = 520, r = 21, cx = W / 2, cy = H / 2 + 6;
-    const rand = mulberry(11);
-    const hexW = Math.sqrt(3) * r, hexH = 1.5 * r;
-    const cells = [];
-    for (let row = -9; row <= 9; row += 1) {
-      for (let col = -9; col <= 9; col += 1) {
-        const x = cx + col * hexW + (row % 2 ? hexW / 2 : 0);
-        const y = cy + row * hexH;
-        const dx = (x - cx) / 285, dy = (y - cy) / 225;
-        const angle = Math.atan2(dy, dx);
-        const wobble = 1 + 0.12 * Math.sin(angle * 3 + 0.7) + 0.08 * Math.cos(angle * 5);
-        if (Math.hypot(dx, dy) < wobble * 0.92) cells.push({ x, y, row, col, office: false });
-      }
-    }
-    cells.forEach((c) => { c.office = rand() < 0.36; });
-    const near = (x, y) => cells.reduce((best, c) => (Math.hypot(c.x - x, c.y - y) < Math.hypot(best.x - x, best.y - y) ? c : best), cells[0]);
-    const you = near(cx - 120, cy + 20);
-    const target = near(cx + 150, cy - 70);
-    you.office = true; target.office = true;
-    const hex = (c) => {
-      const pts = [];
-      for (let k = 0; k < 6; k += 1) {
-        const a = Math.PI / 180 * (60 * k - 30);
-        pts.push(`${(c.x + (r - 1.5) * Math.cos(a)).toFixed(1)},${(c.y + (r - 1.5) * Math.sin(a)).toFixed(1)}`);
-      }
-      return pts.join(" ");
-    };
-    let svg = "";
-    cells.forEach((c) => {
-      const cls = c === you ? "hex hex-you" : c === target ? "hex hex-target" : c.office ? "hex hex-office" : "hex";
-      svg += `<polygon class="${cls}" points="${hex(c)}"></polygon>`;
-    });
-    cells.forEach((c) => {
-      if (!c.office || c === you || c === target) return;
-      svg += `<rect class="office-dot" x="${(c.x - 3).toFixed(1)}" y="${(c.y - 3).toFixed(1)}" width="6" height="6"></rect>`;
-    });
-    const mid = { x: (you.x + target.x) / 2, y: Math.min(you.y, target.y) - 70 };
-    svg += `<path class="route" pathLength="1" d="M${you.x.toFixed(1)},${you.y.toFixed(1)} Q${mid.x.toFixed(1)},${mid.y.toFixed(1)} ${target.x.toFixed(1)},${target.y.toFixed(1)}"></path>`;
-    svg += `<rect class="office-you" x="${(you.x - 6).toFixed(1)}" y="${(you.y - 6).toFixed(1)}" width="12" height="12"></rect>`;
-    svg += `<rect class="office-target" x="${(target.x - 6).toFixed(1)}" y="${(target.y - 6).toFixed(1)}" width="12" height="12"></rect>`;
-    svg += `<text class="map-label map-label-you" x="${you.x.toFixed(1)}" y="${(you.y + 42).toFixed(1)}" text-anchor="middle">ваш район</text>`;
-    const apexY = 0.25 * you.y + 0.5 * mid.y + 0.25 * target.y;
-    svg += `<text class="map-label" x="${target.x.toFixed(1)}" y="${(target.y + 42).toFixed(1)}" text-anchor="middle">район клиента</text>`;
-    svg += `<text class="map-label map-label-mid" x="${mid.x.toFixed(1)}" y="${(apexY - 16).toFixed(1)}" text-anchor="middle">запрос передан в сети</text>`;
-    root.innerHTML = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" focusable="false">${svg}</svg>`;
   }
 
   /* ---------------------------------------------------------------- simple renderers */
@@ -536,23 +477,17 @@
     targets.forEach((t) => observer.observe(t));
   }
 
-  // На телефоне блок «Откуда берутся клиенты» свёрнут, чтобы не удлинять страницу.
-  function configureModelRoles() {
-    const roles = qs(".model-roles");
-    if (roles && window.matchMedia("(max-width: 700px)").matches) roles.open = false;
-  }
-
   function initialize() {
     renderCtaLabels(); renderPdfLinks();
     renderFacts("#hero-facts", content.heroFacts, "fact");
     renderFacts("#network-metrics", content.networkMetrics, "metric");
     renderMembership();
     renderSystemSteps(); renderIsos(); configureSystemScroll();
-    renderDensity(); renderCities();
+    renderCities();
     renderSplit(); renderPerformance(); configureTabs(); renderCases();
     renderLaunch(); renderConditions(); renderStoriesAndTeam();
     renderContacts(); renderSocialLinks(); renderNotes();
-    configureModelRoles(); configureMenu(); configureScrollChrome(); configureActiveNav(); configureInView();
+    configureMenu(); configureScrollChrome(); configureActiveNav(); configureInView();
     requestAnimationFrame(() => doc.classList.add("is-loaded"));
     let lastSmall = null;
     window.addEventListener("resize", () => {
