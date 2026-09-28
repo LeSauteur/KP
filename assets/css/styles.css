@@ -570,6 +570,18 @@ sup.fn a:hover { color: var(--red); }
 .office-part { opacity: 0; transform: translateY(-5px); transition: opacity .35s ease, transform .35s var(--ease); }
 .office-part.is-on { opacity: 1; transform: none; }
 
+/* Desktop module labels: quiet perimeter callouts, not flags over the drawing. */
+.iso-callout { opacity: .3; transition: opacity .35s ease; }
+.callout-line { fill: none; stroke: var(--ink-2); stroke-width: 1; stroke-dasharray: 3 4; }
+.callout-dot { fill: var(--ink-2); }
+.callout-card { stroke-width: 1; stroke-opacity: .45; transition: fill .25s ease, stroke-width .25s ease, stroke-opacity .25s ease; }
+.callout-num-bg, .callout-name, .callout-line, .callout-dot { transition: opacity .25s ease; }
+.iso-callout.is-on { opacity: .72; }
+.iso-callout.is-current { opacity: 1; }
+.iso-callout.is-current .callout-card { stroke-width: 2; stroke-opacity: 1; }
+.iso-callout.is-current .callout-line { stroke-width: 1.5; stroke-dasharray: none; }
+.is-final .iso-callout { opacity: 0; }
+
 /* ---------- Pulse from module to office: plays once per step ---------- */
 .iso-pulse { pointer-events: none; }
 .pulse-path { opacity: 0; stroke-width: 1.5; stroke-dasharray: 4 5; }
@@ -585,7 +597,7 @@ sup.fn a:hover { color: var(--red); }
 }
 @media (prefers-reduced-motion: reduce) {
   .iso-pulse { display: none; }
-  .office-part, .iso-tile, .iso-tall { transition: none; }
+  .office-part, .iso-tile, .iso-tall, .iso-callout, .callout-card { transition: none; }
 }
 .iso-shell.is-cut polygon { fill-opacity: .38; }
 

@@ -272,6 +272,32 @@
     cells.sort((a, b) => a.order - b.order || a.i - b.i);
     let body = "";
     let labelLayer = "";
+    let calloutLayer = "";
+    // На широком экране подписи живут по периметру схемы: предметы и офис остаются чистыми.
+    const callouts = [
+      { x: 12, y: 175, side: "left" },
+      { x: 524, y: 72, side: "right" },
+      { x: 524, y: 132, side: "right" },
+      { x: 524, y: 200, side: "right" },
+      { x: 524, y: 292, side: "right" },
+      { x: 524, y: 392, side: "right" },
+      { x: 12, y: 382, side: "left" },
+      { x: 12, y: 315, side: "left" }
+    ];
+    const callout = (n, ax, ay, tone, name) => {
+      const pos = callouts[n];
+      const w = 184, h = 38;
+      const edgeX = pos.side === "left" ? pos.x + w : pos.x;
+      const edgeY = pos.y + h / 2;
+      const midX = (ax + edgeX) / 2;
+      return `<g class="iso-callout" data-i="${n}">` +
+        `<polyline class="callout-line" points="${ax.toFixed(1)},${ay.toFixed(1)} ${midX.toFixed(1)},${ay.toFixed(1)} ${midX.toFixed(1)},${edgeY.toFixed(1)} ${edgeX.toFixed(1)},${edgeY.toFixed(1)}"></polyline>` +
+        `<circle class="callout-dot" cx="${ax.toFixed(1)}" cy="${ay.toFixed(1)}" r="2.5"></circle>` +
+        `<rect class="callout-card" x="${pos.x}" y="${pos.y}" width="${w}" height="${h}" rx="5" fill="${WHITE}" stroke="${tone.ink}"></rect>` +
+        `<rect class="callout-num-bg" x="${pos.x + 7}" y="${pos.y + 7}" width="28" height="24" rx="4" fill="${tone.top}"></rect>` +
+        `<text x="${pos.x + 21}" y="${pos.y + 24}" text-anchor="middle" class="iso-text callout-num" font-size="11" fill="${tone.ink}">${pad(n + 1)}</text>` +
+        `<text x="${pos.x + 43}" y="${pos.y + 24}" class="iso-text callout-name" font-size="11" fill="${INK}">${escapeHtml(name)}</text></g>`;
+    };
     cells.forEach(({ i, j, n }) => {
       if (n === -1) { body += officeSvg(I, lit); return; }
       const x0 = i + G, y0 = j + G, x1 = i + 1 - G, y1 = j + 1 - G;
@@ -280,31 +306,19 @@
       // Предмет — в задней части грани, подпись — в передней, чтобы не перекрывались.
       const cut = FRONT.has(`${i},${j}`) ? " is-cut" : "";
       const icon = (h) => moduleIcon(I, modules[n]?.icon, i + 0.36, j + 0.36, h, tone);
-      // Подпись — флажок: древко с передней части грани и табличка с номером и названием.
-      const label = (h) => {
-        const full = labels === "full";
-        const size = full ? 12 : 24;
-        const txt = full ? `${pad(n + 1)} ${name}` : pad(n + 1);
-        // Флажок смотрит наружу от офиса: левые блоки — влево, правые — вправо.
-        const side = i - j < 0 ? -1 : 1;
-        const center = i === 0 && j === 0;
-        const [bx, by] = center ? I.p(i + 0.5, j + 0.5, h) : side < 0 ? I.p(x0 + 0.14, y1 - 0.14, h) : I.p(x1 - 0.14, y0 + 0.14, h);
-        const pole = full ? 34 : 58;
-        const w = Math.round(txt.length * size * 0.62 + size * 1.1);
-        const hgt = Math.round(size * 1.75);
-        const top = by - pole;
-        return `<line class="flag-pole" x1="${bx.toFixed(1)}" y1="${by.toFixed(1)}" x2="${bx.toFixed(1)}" y2="${(top - hgt).toFixed(1)}" stroke="${INK}" stroke-width="${full ? 1 : 2}"></line>` +
-          `<circle cx="${bx.toFixed(1)}" cy="${by.toFixed(1)}" r="${full ? 2 : 4}" fill="${INK}"></circle>` +
-          `<rect class="flag" x="${(side < 0 ? bx - w : bx).toFixed(1)}" y="${(top - hgt).toFixed(1)}" width="${w}" height="${hgt}" fill="${WHITE}" stroke="${tone.ink}" stroke-width="${full ? 1 : 2}"></rect>` +
-          `<text x="${(side < 0 ? bx - w + size * 0.55 : bx + size * 0.55).toFixed(1)}" y="${(top - hgt * 0.32).toFixed(1)}" class="iso-text" font-size="${size}" fill="${INK}">${escapeHtml(txt)}</text>`;
-      };
       body += `<g class="iso-slot" data-i="${n}">${I.poly([[x0, y0, 0], [x1, y0, 0], [x1, y1, 0], [x0, y1, 0]], "none", "#A9A49A", 1.2, 'stroke-dasharray="5 5" pathLength="1" class="draw-dash"')}${slotNumbers ? I.text(i + 0.5, j + 0.5, 0, pad(n + 1), fs, INK2, 5) : ""}</g>`;
       const [sx0, sy0] = I.p(i + 0.5, j + 0.5, 0);
       const [cx0, cy0] = I.p(1.5, 1.5, 0.7);
       const gather = `--gx:${(cx0 - sx0).toFixed(1)}px;--gy:${(cy0 - sy0).toFixed(1)}px`;
       body += `<g class="iso-tile" style="${gather}" data-i="${n}" data-sx="${sx0.toFixed(1)}" data-sy="${sy0.toFixed(1)}" data-tone="${tone.ink}"><g class="iso-shell${cut}">${I.box(x0, y0, x1, y1, 0.16, tone.top, tone.left, tone.right)}</g>${icon(0.16)}</g>`;
-      // Подписи — отдельным верхним слоем, чтобы стены офиса не перекрывали их на низких плитках.
-      labelLayer += `<g class="iso-tile iso-label" style="${gather}" data-i="${n}">${label(0.16)}</g>`;
+      const [ax, ay] = I.p(i + 0.5, j + 0.5, 0.16);
+      if (labels === "full") {
+        calloutLayer += callout(n, ax, ay, tone, name);
+      } else {
+        // На телефоне остаётся только компактный номер на передней части грани.
+        const [lx, ly] = I.p(i + 0.7, j + 0.7, 0.175);
+        labelLayer += `<g class="iso-tile iso-label" style="${gather}" data-i="${n}"><rect x="${(lx - 17).toFixed(1)}" y="${(ly - 15).toFixed(1)}" width="34" height="28" rx="4" fill="${WHITE}" fill-opacity=".9" stroke="${tone.ink}" stroke-width="2"></rect><text x="${lx.toFixed(1)}" y="${(ly + 6).toFixed(1)}" text-anchor="middle" class="iso-text" font-size="20" fill="${tone.ink}">${pad(n + 1)}</text></g>`;
+      }
     });
     // Импульс: маркер бежит по полу от текущего модуля к офису. Координаты — в data-атрибутах плиток.
     const pulseSize = labels === "full" ? 10 : 22;
@@ -316,7 +330,7 @@
       legendSvg = `<rect x="${lx}" y="${ly - 11}" width="16" height="12" fill="none" stroke="${RED}" stroke-width="2"></rect>` +
         `<text x="${lx + 26}" y="${ly}" class="iso-text" font-size="${labels === "full" ? 15 : 24}" fill="${RED}">ВАШ ОФИС</text>`;
     }
-    return `<svg viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg" focusable="false">${floor}${body}${buildingSvg(I, labels)}${labelLayer}${pulse}${legendSvg}</svg>`;
+    return `<svg viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg" focusable="false">${floor}${body}${buildingSvg(I, labels)}${labelLayer}${calloutLayer}${pulse}${legendSvg}</svg>`;
   }
 
   function setIsoState(root, built, current, final) {
@@ -328,6 +342,11 @@
       g.classList.toggle("is-gather", final);
     });
     qsa(".iso-slot", root).forEach((g) => g.classList.toggle("is-off", Number(g.dataset.i) < built || final));
+    qsa(".iso-callout", root).forEach((g) => {
+      const i = Number(g.dataset.i);
+      g.classList.toggle("is-on", i < built && !final);
+      g.classList.toggle("is-current", i === current && !final);
+    });
     qsa(".office-part", root).forEach((g) => {
       const need = g.dataset.need;
       g.classList.toggle("is-on", need === "final" ? final : Number(need) < built || final);
