@@ -46,6 +46,8 @@
     { top: "#D1DED7", left: "#BCCDC4", right: "#A7BBB0", ink: "#3F6152", wash: "rgba(120, 160, 140, .18)" }
   ];
   const SLOTS = [[0, 1], [0, 0], [1, 0], [2, 0], [2, 1], [2, 2], [1, 2], [0, 2]];
+  // Клетки перед офисом: их блоки рисуются «в разрезе», чтобы офис оставался виден.
+  const FRONT = new Set(["2,1", "2,2", "1,2"]);
   // Все модули одной высоты: важность направлений не различается, разнообразие дают предметы.
   const TALL = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5];
   const OUTLINES = [
@@ -210,19 +212,39 @@
     const cells = SLOTS.map(([i, j], n) => ({ i, j, n, order: i + j })).concat([{ i: 1, j: 1, n: -1, order: 2 }]);
     cells.sort((a, b) => a.order - b.order || a.i - b.i);
     let body = "";
+    let labelLayer = "";
     cells.forEach(({ i, j, n }) => {
       if (n === -1) { body += officeSvg(I, lit); return; }
       const x0 = i + G, y0 = j + G, x1 = i + 1 - G, y1 = j + 1 - G;
       const name = modules[n]?.short || "";
       const tone = TONES[modules[n]?.contour ?? 0] || TONES[0];
       // Предмет — в задней части грани, подпись — в передней, чтобы не перекрывались.
-      const label = (h) => moduleIcon(I, modules[n]?.icon, i + 0.36, j + 0.36, h, tone) + (labels === "full"
-        ? I.text(i + 0.68, j + 0.68, h, pad(n + 1), fs - 1, INK2, -6) + I.text(i + 0.68, j + 0.68, h, name, fs - 2, INK, 10)
-        : I.text(i + 0.7, j + 0.7, h, pad(n + 1), fs, INK2, 8));
+      const cut = FRONT.has(`${i},${j}`) ? " is-cut" : "";
+      const icon = (h) => moduleIcon(I, modules[n]?.icon, i + 0.36, j + 0.36, h, tone);
+      // Подпись — флажок: древко с передней части грани и табличка с номером и названием.
+      const label = (h) => {
+        const full = labels === "full";
+        const size = full ? 12 : 24;
+        const txt = full ? `${pad(n + 1)} ${name}` : pad(n + 1);
+        // Флажок смотрит наружу от офиса: левые блоки — влево, правые — вправо.
+        const side = i - j < 0 ? -1 : 1;
+        const center = i === 0 && j === 0;
+        const [bx, by] = center ? I.p(i + 0.5, j + 0.5, h) : side < 0 ? I.p(x0 + 0.14, y1 - 0.14, h) : I.p(x1 - 0.14, y0 + 0.14, h);
+        const pole = full ? 34 : 58;
+        const w = Math.round(txt.length * size * 0.62 + size * 1.1);
+        const hgt = Math.round(size * 1.75);
+        const top = by - pole;
+        return `<line class="flag-pole" x1="${bx.toFixed(1)}" y1="${by.toFixed(1)}" x2="${bx.toFixed(1)}" y2="${(top - hgt).toFixed(1)}" stroke="${INK}" stroke-width="${full ? 1 : 2}"></line>` +
+          `<circle cx="${bx.toFixed(1)}" cy="${by.toFixed(1)}" r="${full ? 2 : 4}" fill="${INK}"></circle>` +
+          `<rect class="flag" x="${(side < 0 ? bx - w : bx).toFixed(1)}" y="${(top - hgt).toFixed(1)}" width="${w}" height="${hgt}" fill="${WHITE}" stroke="${tone.ink}" stroke-width="${full ? 1 : 2}"></rect>` +
+          `<text x="${(side < 0 ? bx - w + size * 0.55 : bx + size * 0.55).toFixed(1)}" y="${(top - hgt * 0.32).toFixed(1)}" class="iso-text" font-size="${size}" fill="${INK}">${escapeHtml(txt)}</text>`;
+      };
       body += `<g class="iso-slot" data-i="${n}">${I.poly([[x0, y0, 0], [x1, y0, 0], [x1, y1, 0], [x0, y1, 0]], "none", "#A9A49A", 1.2, 'stroke-dasharray="5 5" pathLength="1" class="draw-dash"')}${slotNumbers ? I.text(i + 0.5, j + 0.5, 0, pad(n + 1), fs, INK2, 5) : ""}</g>`;
       const [sx0, sy0] = I.p(i + 0.5, j + 0.5, 0);
-      body += `<g class="iso-tile" data-i="${n}" data-sx="${sx0.toFixed(1)}" data-sy="${sy0.toFixed(1)}" data-tone="${tone.ink}">${I.box(x0, y0, x1, y1, 0.16, tone.top, tone.left, tone.right)}${label(0.16)}</g>`;
-      body += `<g class="iso-tall" data-i="${n}">${I.box(x0, y0, x1, y1, TALL[n], tone.top, tone.left, tone.right)}${label(TALL[n])}</g>`;
+      body += `<g class="iso-tile" data-i="${n}" data-sx="${sx0.toFixed(1)}" data-sy="${sy0.toFixed(1)}" data-tone="${tone.ink}"><g class="iso-shell${cut}">${I.box(x0, y0, x1, y1, 0.16, tone.top, tone.left, tone.right)}</g>${icon(0.16)}</g>`;
+      body += `<g class="iso-tall" data-i="${n}"><g class="iso-shell${cut}">${I.box(x0, y0, x1, y1, TALL[n], tone.top, tone.left, tone.right)}</g>${icon(TALL[n])}</g>`;
+      // Подписи — отдельным верхним слоем, чтобы стены офиса не перекрывали их на низких плитках.
+      labelLayer += `<g class="iso-tile iso-label" data-i="${n}">${label(0.16)}</g><g class="iso-tall iso-label" data-i="${n}">${label(TALL[n])}</g>`;
     });
     // Импульс: маркер бежит по полу от текущего модуля к офису. Координаты — в data-атрибутах плиток.
     const pulseSize = labels === "full" ? 10 : 22;
@@ -234,7 +256,7 @@
       legendSvg = `<rect x="${lx}" y="${ly - 11}" width="16" height="12" fill="none" stroke="${RED}" stroke-width="2"></rect>` +
         `<text x="${lx + 26}" y="${ly}" class="iso-text" font-size="${labels === "full" ? 15 : 24}" fill="${RED}">ВАШ ОФИС</text>`;
     }
-    return `<svg viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg" focusable="false">${floor}${body}${pulse}${legendSvg}</svg>`;
+    return `<svg viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg" focusable="false">${floor}${body}${labelLayer}${pulse}${legendSvg}</svg>`;
   }
 
   function setIsoState(root, built, current, final) {

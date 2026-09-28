@@ -587,3 +587,4 @@ sup.fn a:hover { color: var(--red); }
   .iso-pulse { display: none; }
   .office-part, .iso-tile, .iso-tall { transition: none; }
 }
+.iso-shell.is-cut polygon { fill-opacity: .38; }
