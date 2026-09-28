@@ -342,6 +342,8 @@ sup.fn a:hover { color: var(--red); }
 .after-steps p { color: var(--ink-2); font-size: 15px; }
 .final-side { display: grid; gap: 12px; }
 .iso-small { max-width: 420px; margin: -24px auto 8px; }
+.final-illustration { position: relative; margin: -28px -28px 8px; overflow: hidden; background: var(--paper); }
+.final-illustration img { display: block; width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: cover; }
 .contact-actions { display: grid; gap: 12px; }
 .final-side .button { width: 100%; }
 .contact-form { display: grid; gap: 8px; margin-top: 8px; }
@@ -505,6 +507,7 @@ sup.fn a:hover { color: var(--red); }
   .photo-strip figure:first-child { grid-column: auto; }
   .photo-strip img { aspect-ratio: 4 / 3; flex: none; }
   .section-red .final-side { padding: 20px; }
+  .final-illustration { margin: -20px -20px 8px; }
 }
 
 /* ---------- Mobile/tablet: compact sticky plan assembles while module cards scroll ---------- */
