@@ -342,6 +342,8 @@ sup.fn a:hover { color: var(--red); }
 .after-steps p { color: var(--ink-2); font-size: 15px; }
 .final-side { display: grid; gap: 12px; }
 .iso-small { max-width: 420px; margin: -24px auto 8px; }
+.final-illustration { position: relative; margin: -28px -28px 8px; overflow: hidden; background: var(--paper); }
+.final-illustration img { display: block; width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: cover; }
 .contact-actions { display: grid; gap: 12px; }
 .final-side .button { width: 100%; }
 .contact-form { display: grid; gap: 8px; margin-top: 8px; }
@@ -505,6 +507,7 @@ sup.fn a:hover { color: var(--red); }
   .photo-strip figure:first-child { grid-column: auto; }
   .photo-strip img { aspect-ratio: 4 / 3; flex: none; }
   .section-red .final-side { padding: 20px; }
+  .final-illustration { margin: -20px -20px 8px; }
 }
 
 /* ---------- Mobile/tablet: compact sticky plan assembles while module cards scroll ---------- */
@@ -564,3 +567,49 @@ sup.fn a:hover { color: var(--red); }
   .model-roles dl > div, .model-roles dl > div + div { padding: 8px 0; border-left: 0; }
   .model-roles dl > div + div { border-top: 1px solid var(--faint); }
 }
+
+/* ---------- Living office: details appear as modules connect ---------- */
+.office-sign { font-family: var(--sans); font-weight: 600; letter-spacing: .02em; }
+.office-part { opacity: 0; transform: translateY(-5px); transition: opacity .35s ease, transform .35s var(--ease); }
+.office-part.is-on { opacity: 1; transform: none; }
+
+/* Desktop module labels: quiet perimeter callouts, not flags over the drawing. */
+.iso-callout { opacity: .3; transition: opacity .35s ease; }
+.callout-line { fill: none; stroke: var(--ink-2); stroke-width: 1; stroke-dasharray: 3 4; }
+.callout-dot { fill: var(--ink-2); }
+.callout-card { stroke-width: 1; stroke-opacity: .45; transition: fill .25s ease, stroke-width .25s ease, stroke-opacity .25s ease; }
+.callout-num-bg, .callout-name, .callout-line, .callout-dot { transition: opacity .25s ease; }
+.iso-callout.is-on { opacity: .72; }
+.iso-callout.is-current { opacity: 1; }
+.iso-callout.is-current .callout-card { stroke-width: 2; stroke-opacity: 1; }
+.iso-callout.is-current .callout-line { stroke-width: 1.5; stroke-dasharray: none; }
+.is-final .iso-callout { opacity: 0; }
+
+/* ---------- Pulse from module to office: plays once per step ---------- */
+.iso-pulse { pointer-events: none; }
+.pulse-path { opacity: 0; stroke-width: 1.5; stroke-dasharray: 4 5; }
+.pulse-dot { opacity: 0; }
+.iso-pulse.is-playing .pulse-path { animation: pulse-path .9s ease forwards; }
+.iso-pulse.is-playing .pulse-dot { animation: pulse-move .8s var(--ease) forwards; }
+@keyframes pulse-path { 0% { opacity: 0; } 30% { opacity: .9; } 100% { opacity: 0; } }
+@keyframes pulse-move {
+  0% { opacity: 0; translate: 0 0; }
+  12% { opacity: 1; }
+  80% { opacity: 1; }
+  100% { opacity: 0; translate: var(--dx) var(--dy); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .iso-pulse { display: none; }
+  .office-part, .iso-tile, .iso-tall, .iso-callout, .callout-card { transition: none; }
+}
+.iso-shell.is-cut polygon { fill-opacity: .38; }
+
+/* ---------- Final: modules gather into a three-storey building ---------- */
+.iso-tile.is-gather { opacity: 0; transform: translate(var(--gx), var(--gy)); transition: opacity .5s ease, transform .6s var(--ease); }
+.bld-part { opacity: 0; transform: translateY(-28px); transition: opacity .45s ease var(--d, 0ms), transform .55s var(--ease) var(--d, 0ms); }
+.is-final .bld-part { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) {
+  .bld-part, .iso-tile.is-gather { transition: none; }
+}
+.iso-contour-label { transition: opacity .4s ease; }
+.is-final .iso-contour-label { opacity: 0; }

@@ -46,7 +46,8 @@
     { top: "#D1DED7", left: "#BCCDC4", right: "#A7BBB0", ink: "#3F6152", wash: "rgba(120, 160, 140, .18)" }
   ];
   const SLOTS = [[0, 1], [0, 0], [1, 0], [2, 0], [2, 1], [2, 2], [1, 2], [0, 2]];
-  const TALL = [0.45, 0.7, 0.7, 0.7, 0.45, 0.2, 0.2, 0.2];
+  // Клетки перед офисом: их блоки рисуются «в разрезе», чтобы офис оставался виден.
+  const FRONT = new Set(["2,1", "2,2", "1,2"]);
   const OUTLINES = [
     { pts: [[0, 0], [3, 0], [3, 1], [1, 1], [1, 2], [0, 2]], label: [-0.9, -0.3], anchor: "end" },
     { pts: [[2, 1], [3, 1], [3, 3], [2, 3]], label: [3.06, 2.77], anchor: "start" },
@@ -61,32 +62,194 @@
       poly([[x1, y0, 0], [x1, y1, 0], [x1, y1, h], [x1, y0, h]], right, stroke, sw) +
       poly([[x0, y1, 0], [x1, y1, 0], [x1, y1, h], [x0, y1, h]], left, stroke, sw) +
       poly([[x0, y0, h], [x1, y0, h], [x1, y1, h], [x0, y1, h]], top, stroke, sw);
+    const line = (a, b, stroke = INK, sw = 1) => {
+      const [x1, y1] = p(...a), [x2, y2] = p(...b);
+      return `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="${stroke}" stroke-width="${sw}"></line>`;
+    };
     const text = (x, y, z, s, size, color, dy = 0, anchor = "middle") => {
       const [a, b] = p(x, y, z);
       return `<text x="${a.toFixed(1)}" y="${(b + dy).toFixed(1)}" text-anchor="${anchor}" class="iso-text" font-size="${size}" fill="${color}">${escapeHtml(s)}</text>`;
     };
-    return { p, poly, box, text, S };
+    return { p, poly, box, line, text, S };
   }
 
+  // Офис рисуется в собственных координатах клетки: dx, dy от 0 до L, z — высота.
+  // Детали с data-need появляются, когда подключён модуль с этим индексом ("final" — в финале).
   function officeSvg(I, lit) {
-    const x0 = 1 + G, y0 = 1 + G, x1 = 2 - G, y1 = 2 - G, hw = 0.42;
+    const X = 1 + G, Y = 1 + G, L = 1 - 2 * G, hw = 0.42;
     const draw = 'pathLength="1" class="draw"';
-    let o = "";
-    o += I.poly([[x0, y0, 0], [x1, y0, 0], [x1, y1, 0], [x0, y1, 0]], lit ? "#FFF3F2" : WHITE, RED, 2, draw);
-    o += I.poly([[x0, y0, 0], [x1, y0, 0], [x1, y0, hw], [x0, y0, hw]], "#F7F4EF", RED, 2, draw);
-    o += I.poly([[x0, y0, 0], [x0, y1, 0], [x0, y1, hw], [x0, y0, hw]], "#EFEBE4", RED, 2, draw);
-    o += I.poly([[x0 + 0.28, y0, 0.16], [x0 + 0.62, y0, 0.16], [x0 + 0.62, y0, 0.33], [x0 + 0.28, y0, 0.33]], "#E4EBEF", INK, 1);
-    o += I.poly([[x0, y0 + 0.52, 0], [x0, y0 + 0.72, 0], [x0, y0 + 0.72, 0.3], [x0, y0 + 0.52, 0.3]], "#E2DDD4", INK, 1);
-    [[0.18, 0.2], [0.18, 0.5]].forEach(([dx, dy]) => {
-      o += I.box(x0 + dx, y0 + dy, x0 + dx + 0.3, y0 + dy + 0.16, 0.1, WHITE, "#E6E2DA", "#DAD5CB", INK, 1);
-      o += I.box(x0 + dx + 0.34, y0 + dy + 0.04, x0 + dx + 0.42, y0 + dy + 0.12, 0.06, lit ? RED : WHITE, "#E6E2DA", "#DAD5CB", INK, 0.8);
+    const at = (dx, dy, z = 0) => [X + dx, Y + dy, z];
+    const wy = (a, b, z0, z1, fill, stroke = INK, sw = 1) => I.poly([at(a, 0, z0), at(b, 0, z0), at(b, 0, z1), at(a, 0, z1)], fill, stroke, sw);
+    const wx = (a, b, z0, z1, fill, stroke = INK, sw = 1) => I.poly([at(0, a, z0), at(0, b, z0), at(0, b, z1), at(0, a, z1)], fill, stroke, sw);
+    const part = (need, svg) => `<g class="office-part" data-need="${need}">${svg}</g>`;
+    const base = [];
+    const floor = [];
+    // Пол и две стены.
+    base.push(I.poly([at(0, 0), at(L, 0), at(L, L), at(0, L)], lit ? "#FFF3F2" : WHITE, RED, 2, draw));
+    base.push(I.poly([at(0, 0), at(L, 0), at(L, 0, hw), at(0, 0, hw)], "#F7F4EF", RED, 2, draw));
+    base.push(I.poly([at(0, 0), at(0, L), at(0, L, hw), at(0, 0, hw)], "#EFEBE4", RED, 2, draw));
+    // Окно, дверь и вывеска.
+    base.push(wy(0.56, 0.8, 0.12, 0.32, "#E4EBEF"));
+    base.push(part("final", wy(0.56, 0.8, 0.12, 0.32, "#FFE7A3")));
+    base.push(I.line(at(0.68, 0, 0.12), at(0.68, 0, 0.32), INK, 0.8));
+    base.push(wx(0.56, 0.78, 0, 0.3, "#E2DDD4"));
+    base.push(part("final", wy(0.04, 0.5, 0.29, 0.405, WHITE, RED, 1.2)));
+    const [sx, sy] = I.p(X + 0.07, Y, 0.305);
+    base.push(`<text class="office-sign" transform="matrix(0.866 0.5 0 1 ${sx.toFixed(1)} ${sy.toFixed(1)})" font-size="${(I.S * 0.085).toFixed(1)}" fill="${RED}">DОМИАН</text>`);
+    // 1 · Новостройки: постер с домом.
+    base.push(part(1, wy(0.06, 0.24, 0.07, 0.25, WHITE) +
+      wy(0.1, 0.2, 0.09, 0.16, TONES[0].right, INK, 0.8) +
+      I.poly([at(0.085, 0, 0.16), at(0.215, 0, 0.16), at(0.15, 0, 0.22)], TONES[0].ink, INK, 0.8)));
+    // 4 · Центр управления: доска со столбиками.
+    base.push(part(4, wy(0.28, 0.5, 0.07, 0.25, WHITE) +
+      wy(0.31, 0.35, 0.09, 0.14, TONES[1].ink, "none", 0) +
+      wy(0.37, 0.41, 0.09, 0.18, TONES[1].ink, "none", 0) +
+      wy(0.43, 0.47, 0.09, 0.22, TONES[1].ink, "none", 0)));
+    // 7 · Обучение: флипчарт у левой стены.
+    const fx = 0.07;
+    floor.push([0.3, part(7,
+      I.line(at(fx, 0.22, 0.1), at(fx, 0.2, 0), INK, 1) + I.line(at(fx, 0.38, 0.1), at(fx, 0.4, 0), INK, 1) +
+      I.poly([at(fx, 0.2, 0.1), at(fx, 0.4, 0.1), at(fx, 0.4, 0.31), at(fx, 0.2, 0.31)], WHITE, INK, 1) +
+      `<polyline points="${[[0.23, 0.14], [0.28, 0.19], [0.32, 0.17], [0.37, 0.26]].map(([y, z]) => I.p(X + fx, Y + y, z).map((v) => v.toFixed(1)).join(",")).join(" ")}" fill="none" stroke="${TONES[2].ink}" stroke-width="1.4"></polyline>`)]);
+    // Столы агентов: экран тёмный, с CRM светлый; агенты — с модулем найма.
+    [[0.13, 0.12], [0.44, 0.12], [0.44, 0.38]].forEach(([dx, dy]) => {
+      const mon = (fill) => I.poly([at(dx + 0.04, dy + 0.03, 0.08), at(dx + 0.18, dy + 0.03, 0.08), at(dx + 0.18, dy + 0.03, 0.18), at(dx + 0.04, dy + 0.03, 0.18)], fill, INK, 0.9);
+      floor.push([dx + dy, I.box(X + dx, Y + dy, X + dx + 0.22, Y + dy + 0.14, 0.08, WHITE, "#E6E2DA", "#DAD5CB", INK, 1) + mon("#2A2B30") +
+        part(0, mon("#EEF4F6") + I.line(at(dx + 0.06, dy + 0.03, 0.15), at(dx + 0.14, dy + 0.03, 0.15), TONES[0].ink, 1.4) + I.line(at(dx + 0.06, dy + 0.03, 0.115), at(dx + 0.12, dy + 0.03, 0.115), TONES[0].ink, 1.4))]);
+      floor.push([dx + dy + 0.3, part(6, figure(I, X + dx + 0.27, Y + dy + 0.08, 0, TONES[2].top))]);
     });
-    o += I.box(x0 + 0.58, y0 + 0.56, x0 + 0.76, y0 + 0.78, 0.09, WHITE, "#E6E2DA", "#DAD5CB", INK, 1);
-    return `<g class="iso-office">${o}</g>`;
+    // Ресепшн: красная стойка; на ней документы (2) и телефон (5), рядом коробка с ключом (3).
+    floor.push([1.3, I.box(X + 0.5, Y + 0.58, X + 0.8, Y + 0.72, 0.11, "#E4474D", RED, "#A8070D", INK, 1) +
+      part(2, I.poly([at(0.54, 0.6, 0.11), at(0.65, 0.6, 0.11), at(0.65, 0.69, 0.11), at(0.54, 0.69, 0.11)], WHITE, INK, 0.9) +
+        `<circle cx="${I.p(X + 0.6, Y + 0.645, 0.11)[0].toFixed(1)}" cy="${I.p(X + 0.6, Y + 0.645, 0.11)[1].toFixed(1)}" r="${(I.S * 0.018).toFixed(1)}" fill="${RED}"></circle>`) +
+      part(5, boxZ(I, X + 0.7, Y + 0.6, X + 0.76, Y + 0.67, 0.11, 0.035, "#3A3C42", "#2A2B30", "#1E1F23"))]);
+    floor.push([1.08, part(3, boxZ(I, X + 0.38, Y + 0.6, X + 0.46, Y + 0.7, 0, 0.07, TONES[0].top, TONES[0].left, TONES[0].right) +
+      keySvg(I, X + 0.42, Y + 0.65, 0.07, INK))]);
+    // Финал: клиент у двери.
+    floor.push([0.8, part("final", figure(I, X + 0.1, Y + 0.7, 0, "#CFC9BE"))]);
+    floor.sort((a, b) => a[0] - b[0]);
+    return `<g class="iso-office">${base.join("")}${floor.map((f) => f[1]).join("")}</g>`;
+  }
+
+  function boxZ(I, x0, y0, x1, y1, z, h, top, left, right, stroke = INK, sw = 1) {
+    return I.poly([[x1, y0, z], [x1, y1, z], [x1, y1, z + h], [x1, y0, z + h]], right, stroke, sw) +
+      I.poly([[x0, y1, z], [x1, y1, z], [x1, y1, z + h], [x0, y1, z + h]], left, stroke, sw) +
+      I.poly([[x0, y0, z + h], [x1, y0, z + h], [x1, y1, z + h], [x0, y1, z + h]], top, stroke, sw);
+  }
+
+  // Геометрическая фигурка без лица: корпус и голова.
+  function figure(I, x, y, z, fill) {
+    const [hx, hy] = I.p(x, y, z + 0.19);
+    return boxZ(I, x - 0.03, y - 0.03, x + 0.03, y + 0.03, z, 0.13, fill, fill, fill, INK, 1) +
+      `<circle cx="${hx.toFixed(1)}" cy="${hy.toFixed(1)}" r="${(I.S * 0.036).toFixed(1)}" fill="${fill}" stroke="${INK}" stroke-width="1"></circle>`;
+  }
+
+  function keySvg(I, x, y, z, stroke) {
+    const [a, b] = I.p(x - 0.02, y, z);
+    const [c, d] = I.p(x + 0.05, y, z);
+    return `<circle cx="${a.toFixed(1)}" cy="${b.toFixed(1)}" r="${(I.S * 0.018).toFixed(1)}" fill="none" stroke="${stroke}" stroke-width="1.4"></circle>` +
+      `<line x1="${a.toFixed(1)}" y1="${b.toFixed(1)}" x2="${c.toFixed(1)}" y2="${d.toFixed(1)}" stroke="${stroke}" stroke-width="1.4"></line>`;
+  }
+
+  // Предмет на верхней грани модуля: рисуется в тоне направления, занимает заднюю часть грани.
+  function moduleIcon(I, icon, cx, cy, z, tone) {
+    const ink = tone.ink;
+    const py = (x0, x1, z0, z1, fill, stroke = ink, sw = 1) => I.poly([[x0, cy, z0], [x1, cy, z0], [x1, cy, z1], [x0, cy, z1]], fill, stroke, sw);
+    const ln = (a, b, sw = 1.4) => I.line(a, b, ink, sw);
+    const dot = (x, y, zz, r, fill, stroke = ink) => { const [a, b] = I.p(x, y, zz); return `<circle cx="${a.toFixed(1)}" cy="${b.toFixed(1)}" r="${(I.S * r).toFixed(1)}" fill="${fill}" stroke="${stroke}" stroke-width="1.4"></circle>`; };
+    switch (icon) {
+      case "crm":
+        return ln([cx, cy, z], [cx, cy, z + 0.05]) + py(cx - 0.15, cx + 0.15, z + 0.05, z + 0.26, WHITE) +
+          py(cx - 0.11, cx + 0.03, z + 0.17, z + 0.21, tone.right, "none", 0) + py(cx - 0.11, cx + 0.09, z + 0.09, z + 0.13, tone.top, ink, 0.8);
+      case "newbuild":
+        return boxZ(I, cx - 0.08, cy - 0.08, cx + 0.08, cy + 0.08, z, 0.34, WHITE, tone.top, tone.right, ink, 1) +
+          ln([cx + 0.08, cy - 0.05, z + 0.12], [cx + 0.08, cy + 0.05, z + 0.12], 1) + ln([cx + 0.08, cy - 0.05, z + 0.22], [cx + 0.08, cy + 0.05, z + 0.22], 1);
+      case "legal":
+        return I.poly([[cx - 0.13, cy - 0.15, z], [cx + 0.13, cy - 0.15, z], [cx + 0.13, cy + 0.15, z], [cx - 0.13, cy + 0.15, z]], WHITE, ink, 1) +
+          ln([cx - 0.08, cy - 0.1, z], [cx + 0.08, cy - 0.1, z], 1) + ln([cx - 0.08, cy - 0.04, z], [cx + 0.05, cy - 0.04, z], 1) +
+          dot(cx + 0.04, cy + 0.07, z, 0.035, "none");
+      case "partners":
+        return boxZ(I, cx - 0.1, cy - 0.1, cx + 0.1, cy + 0.1, z, 0.13, WHITE, tone.top, tone.right, ink, 1) + keySvg(I, cx, cy, z + 0.13, ink);
+      case "dashboard":
+        return py(cx - 0.15, cx + 0.15, z + 0.02, z + 0.27, WHITE) +
+          py(cx - 0.11, cx - 0.05, z + 0.05, z + 0.12, ink, "none", 0) + py(cx - 0.03, cx + 0.03, z + 0.05, z + 0.17, ink, "none", 0) + py(cx + 0.05, cx + 0.11, z + 0.05, z + 0.23, ink, "none", 0);
+      case "franchise":
+        return I.poly([[cx - 0.14, cy, z + 0.1], [cx - 0.06, cy, z + 0.1], [cx - 0.15, cy, z + 0.02]], WHITE, ink, 1) +
+          py(cx - 0.15, cx + 0.14, z + 0.1, z + 0.27, WHITE) + ln([cx - 0.1, cy, z + 0.21], [cx + 0.08, cy, z + 0.21], 1.2) + ln([cx - 0.1, cy, z + 0.15], [cx + 0.03, cy, z + 0.15], 1.2);
+      case "hiring":
+        return figure(I, cx - 0.07, cy + 0.05, z, tone.top) + figure(I, cx + 0.07, cy - 0.05, z, tone.top);
+      case "training":
+        return ln([cx - 0.09, cy, z + 0.1], [cx - 0.12, cy, z]) + ln([cx + 0.09, cy, z + 0.1], [cx + 0.12, cy, z]) +
+          py(cx - 0.13, cx + 0.13, z + 0.1, z + 0.32, WHITE) +
+          `<polyline points="${[[-0.09, 0.14], [-0.03, 0.2], [0.02, 0.17], [0.09, 0.27]].map(([dx, dz]) => I.p(cx + dx, cy, z + dz).map((v) => v.toFixed(1)).join(",")).join(" ")}" fill="none" stroke="${ink}" stroke-width="1.4"></polyline>`;
+      default:
+        return "";
+    }
+  }
+
+  // Финал системы: модули собираются в трёхэтажное здание. Этаж = направление.
+  // Первый этаж — ваш офис со стеклянным фасадом (живой офис виден внутри), выше — управление и команда.
+  function buildingSvg(I, labels) {
+    const X0 = 0.8, X1 = 2.2, Y0 = 0.8, Y1 = 2.2;
+    const floors = [[0, 0.72], [0.72, 1.22], [1.22, 1.72]];
+    const contours = Array.isArray(content.contours) ? content.contours : [];
+    const modules = Array.isArray(content.modules) ? content.modules : [];
+    const faceR = (z0, z1, fill, extra = "") => I.poly([[X1, Y0, z0], [X1, Y1, z0], [X1, Y1, z1], [X1, Y0, z1]], fill, INK, 1.2, extra);
+    const faceL = (z0, z1, fill, extra = "") => I.poly([[X0, Y1, z0], [X1, Y1, z0], [X1, Y1, z1], [X0, Y1, z1]], fill, INK, 1.2, extra);
+    const mullions = (z0, z1, step, sw = 0.8) => {
+      let o = "";
+      for (let t = X0 + step; t < X1 - 0.01; t += step) o += I.line([t, Y1, z0], [t, Y1, z1], INK, sw);
+      for (let t = Y0 + step; t < Y1 - 0.01; t += step) o += I.line([X1, t, z0], [X1, t, z1], INK, sw);
+      return o;
+    };
+    const part = (d, svg) => `<g class="bld-part" style="--d:${d}ms">${svg}</g>`;
+    let o = "";
+    // Первый этаж: стекло, красная полоса с вывеской, вход.
+    const [g0, g1] = floors[0];
+    o += part(0,
+      faceR(g0, g1, "#EEF3F4", 'fill-opacity=".16"') + faceL(g0, g1, "#EEF3F4", 'fill-opacity=".16"') + mullions(g0, 0.6, 0.35, 0.6) +
+      faceR(0.6, g1, RED) + faceL(0.6, g1, RED) +
+      I.poly([[1.72, Y1, 0], [1.98, Y1, 0], [1.98, Y1, 0.36], [1.72, Y1, 0.36]], "#2A2B30", INK, 1, 'fill-opacity=".35"'));
+    const [sx, sy] = I.p(X0 + 0.18, Y1, 0.63);
+    o += part(0, `<text class="office-sign" transform="matrix(0.866 0.5 0 1 ${sx.toFixed(1)} ${sy.toFixed(1)})" font-size="${(I.S * 0.085).toFixed(1)}" fill="${WHITE}">DОМИАН</text>`);
+    // 2-й и 3-й этажи: плиты в тоне направления с полосой остекления.
+    [1, 2].forEach((k) => {
+      const [z0, z1] = floors[k];
+      const t = TONES[k];
+      o += part(180 * k,
+        faceR(z0, z1, t.right) + faceL(z0, z1, t.left) +
+        faceR(z0 + 0.15, z1 - 0.13, "#EEF3F4") + faceL(z0 + 0.15, z1 - 0.13, "#EEF3F4") + mullions(z0 + 0.15, z1 - 0.13, 0.35));
+    });
+    // Крыша, парапет и вентиляция.
+    const top = floors[2][1];
+    o += part(540,
+      I.poly([[X0, Y0, top], [X1, Y0, top], [X1, Y1, top], [X0, Y1, top]], "#E9E6DF", INK, 1.2) +
+      I.poly([[X0 + 0.08, Y0 + 0.08, top], [X1 - 0.08, Y0 + 0.08, top], [X1 - 0.08, Y1 - 0.08, top], [X0 + 0.08, Y1 - 0.08, top]], "none", INK2, 0.8) +
+      boxZ(I, 1.0, 1.0, 1.3, 1.22, top, 0.12, WHITE, "#E2DED6", "#D6D1C7") +
+      boxZ(I, 1.5, 1.0, 1.72, 1.18, top, 0.09, WHITE, "#E2DED6", "#D6D1C7"));
+    // Выноски этажей справа: этаж, направление, номера модулей.
+    const full = labels === "full";
+    floors.forEach(([z0, z1], k) => {
+      const [ax, ay] = I.p(X1, Y0 + 0.3, (z0 + z1) / 2);
+      const nums = modules.map((m, i) => (m.contour === k ? pad(i + 1) : "")).filter(Boolean).join(" · ");
+      const tx = full ? 560 : ax + 34;
+      let tag;
+      if (full) {
+        tag = `<text x="${tx}" y="${(ay - 12).toFixed(1)}" class="iso-text" font-size="11" fill="${INK2}">ЭТАЖ ${k + 1}</text>` +
+          `<text x="${tx}" y="${(ay + 3).toFixed(1)}" class="iso-text" font-size="12" fill="${TONES[k].ink}">${escapeHtml((contours[k] || "").toUpperCase())}</text>` +
+          `<text x="${tx}" y="${(ay + 18).toFixed(1)}" class="iso-text" font-size="11" fill="${INK}">${nums}</text>`;
+      } else {
+        tag = `<rect x="${tx}" y="${(ay - 24).toFixed(1)}" width="48" height="44" fill="${WHITE}" stroke="${TONES[k].ink}" stroke-width="2"></rect>` +
+          `<text x="${tx + 24}" y="${(ay + 8).toFixed(1)}" text-anchor="middle" class="iso-text" font-size="26" fill="${TONES[k].ink}">${k + 1}</text>`;
+      }
+      o += part(180 * k + 300, `<circle cx="${ax.toFixed(1)}" cy="${ay.toFixed(1)}" r="${full ? 2.5 : 5}" fill="${INK}"></circle>` +
+        `<line x1="${ax.toFixed(1)}" y1="${ay.toFixed(1)}" x2="${(tx - 6).toFixed(1)}" y2="${ay.toFixed(1)}" stroke="${INK}" stroke-width="${full ? 1 : 2}"></line>` + tag);
+    });
+    return `<g class="iso-building">${o}</g>`;
   }
 
   function buildIso(options) {
-    const { width = 720, height = 540, S = 120, ox = 360, oy = 110, labels = "full", contourLabels = true, grid = true, legend = false, lit = false } = options;
+    const { width = 720, height = 580, S = 120, ox = 360, oy = 140, labels = "full", contourLabels = true, grid = true, legend = false, lit = false, slotNumbers = true } = options;
     const I = makeIso(S, ox, oy);
     const modules = Array.isArray(content.modules) ? content.modules : [];
     const contours = Array.isArray(content.contours) ? content.contours : [];
@@ -108,36 +271,86 @@
     const cells = SLOTS.map(([i, j], n) => ({ i, j, n, order: i + j })).concat([{ i: 1, j: 1, n: -1, order: 2 }]);
     cells.sort((a, b) => a.order - b.order || a.i - b.i);
     let body = "";
+    let labelLayer = "";
+    let calloutLayer = "";
+    // На широком экране подписи живут по периметру схемы: предметы и офис остаются чистыми.
+    const callouts = [
+      { x: 12, y: 175, side: "left" },
+      { x: 524, y: 72, side: "right" },
+      { x: 524, y: 132, side: "right" },
+      { x: 524, y: 200, side: "right" },
+      { x: 524, y: 292, side: "right" },
+      { x: 524, y: 392, side: "right" },
+      { x: 12, y: 382, side: "left" },
+      { x: 12, y: 315, side: "left" }
+    ];
+    const callout = (n, ax, ay, tone, name) => {
+      const pos = callouts[n];
+      const w = 184, h = 38;
+      const edgeX = pos.side === "left" ? pos.x + w : pos.x;
+      const edgeY = pos.y + h / 2;
+      const midX = (ax + edgeX) / 2;
+      return `<g class="iso-callout" data-i="${n}">` +
+        `<polyline class="callout-line" points="${ax.toFixed(1)},${ay.toFixed(1)} ${midX.toFixed(1)},${ay.toFixed(1)} ${midX.toFixed(1)},${edgeY.toFixed(1)} ${edgeX.toFixed(1)},${edgeY.toFixed(1)}"></polyline>` +
+        `<circle class="callout-dot" cx="${ax.toFixed(1)}" cy="${ay.toFixed(1)}" r="2.5"></circle>` +
+        `<rect class="callout-card" x="${pos.x}" y="${pos.y}" width="${w}" height="${h}" rx="5" fill="${WHITE}" stroke="${tone.ink}"></rect>` +
+        `<rect class="callout-num-bg" x="${pos.x + 7}" y="${pos.y + 7}" width="28" height="24" rx="4" fill="${tone.top}"></rect>` +
+        `<text x="${pos.x + 21}" y="${pos.y + 24}" text-anchor="middle" class="iso-text callout-num" font-size="11" fill="${tone.ink}">${pad(n + 1)}</text>` +
+        `<text x="${pos.x + 43}" y="${pos.y + 24}" class="iso-text callout-name" font-size="11" fill="${INK}">${escapeHtml(name)}</text></g>`;
+    };
     cells.forEach(({ i, j, n }) => {
       if (n === -1) { body += officeSvg(I, lit); return; }
       const x0 = i + G, y0 = j + G, x1 = i + 1 - G, y1 = j + 1 - G;
       const name = modules[n]?.short || "";
       const tone = TONES[modules[n]?.contour ?? 0] || TONES[0];
-      const label = (h) => labels === "full"
-        ? I.text(i + 0.46, j + 0.46, h, pad(n + 1), fs - 1, INK2, -8) + I.text(i + 0.46, j + 0.46, h, name, fs - 1, INK, 10)
-        : I.text(i + 0.5, j + 0.5, h, pad(n + 1), fs, INK2, 5);
-      body += `<g class="iso-slot" data-i="${n}">${I.poly([[x0, y0, 0], [x1, y0, 0], [x1, y1, 0], [x0, y1, 0]], "none", "#A9A49A", 1.2, 'stroke-dasharray="5 5" pathLength="1" class="draw-dash"')}${I.text(i + 0.5, j + 0.5, 0, pad(n + 1), fs, INK2, 5)}</g>`;
-      body += `<g class="iso-tile" data-i="${n}">${I.box(x0, y0, x1, y1, 0.16, tone.top, tone.left, tone.right)}${label(0.16)}</g>`;
-      body += `<g class="iso-tall" data-i="${n}">${I.box(x0, y0, x1, y1, TALL[n], tone.top, tone.left, tone.right)}${label(TALL[n])}</g>`;
+      // Предмет — в задней части грани, подпись — в передней, чтобы не перекрывались.
+      const cut = FRONT.has(`${i},${j}`) ? " is-cut" : "";
+      const icon = (h) => moduleIcon(I, modules[n]?.icon, i + 0.36, j + 0.36, h, tone);
+      body += `<g class="iso-slot" data-i="${n}">${I.poly([[x0, y0, 0], [x1, y0, 0], [x1, y1, 0], [x0, y1, 0]], "none", "#A9A49A", 1.2, 'stroke-dasharray="5 5" pathLength="1" class="draw-dash"')}${slotNumbers ? I.text(i + 0.5, j + 0.5, 0, pad(n + 1), fs, INK2, 5) : ""}</g>`;
+      const [sx0, sy0] = I.p(i + 0.5, j + 0.5, 0);
+      const [cx0, cy0] = I.p(1.5, 1.5, 0.7);
+      const gather = `--gx:${(cx0 - sx0).toFixed(1)}px;--gy:${(cy0 - sy0).toFixed(1)}px`;
+      body += `<g class="iso-tile" style="${gather}" data-i="${n}" data-sx="${sx0.toFixed(1)}" data-sy="${sy0.toFixed(1)}" data-tone="${tone.ink}"><g class="iso-shell${cut}">${I.box(x0, y0, x1, y1, 0.16, tone.top, tone.left, tone.right)}</g>${icon(0.16)}</g>`;
+      const [ax, ay] = I.p(i + 0.5, j + 0.5, 0.16);
+      if (labels === "full") {
+        calloutLayer += callout(n, ax, ay, tone, name);
+      } else {
+        // На телефоне остаётся только компактный номер на передней части грани.
+        const [lx, ly] = I.p(i + 0.7, j + 0.7, 0.175);
+        labelLayer += `<g class="iso-tile iso-label" style="${gather}" data-i="${n}"><rect x="${(lx - 17).toFixed(1)}" y="${(ly - 15).toFixed(1)}" width="34" height="28" rx="4" fill="${WHITE}" fill-opacity=".9" stroke="${tone.ink}" stroke-width="2"></rect><text x="${lx.toFixed(1)}" y="${(ly + 6).toFixed(1)}" text-anchor="middle" class="iso-text" font-size="20" fill="${tone.ink}">${pad(n + 1)}</text></g>`;
+      }
     });
+    // Импульс: маркер бежит по полу от текущего модуля к офису. Координаты — в data-атрибутах плиток.
+    const pulseSize = labels === "full" ? 10 : 22;
+    const [tx, ty] = I.p(1.5, 1.5, 0);
+    const pulse = `<g class="iso-pulse" data-tx="${tx.toFixed(1)}" data-ty="${ty.toFixed(1)}"><line class="pulse-path" x1="0" y1="0" x2="0" y2="0"></line><rect class="pulse-dot" x="${-pulseSize / 2}" y="${-pulseSize / 2}" width="${pulseSize}" height="${pulseSize}"></rect></g>`;
     let legendSvg = "";
     if (legend) {
       const lx = I.p(0, 3)[0] + 30, ly = I.p(3, 3)[1] + 30;
       legendSvg = `<rect x="${lx}" y="${ly - 11}" width="16" height="12" fill="none" stroke="${RED}" stroke-width="2"></rect>` +
         `<text x="${lx + 26}" y="${ly}" class="iso-text" font-size="${labels === "full" ? 15 : 24}" fill="${RED}">ВАШ ОФИС</text>`;
     }
-    return `<svg viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg" focusable="false">${floor}${body}${legendSvg}</svg>`;
+    return `<svg viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg" focusable="false">${floor}${body}${buildingSvg(I, labels)}${labelLayer}${calloutLayer}${pulse}${legendSvg}</svg>`;
   }
 
   function setIsoState(root, built, current, final) {
     if (!root) return;
     qsa(".iso-tile", root).forEach((g) => {
       const i = Number(g.dataset.i);
+      g.classList.toggle("is-on", i < built || final);
+      g.classList.toggle("is-current", i === current && !final);
+      g.classList.toggle("is-gather", final);
+    });
+    qsa(".iso-slot", root).forEach((g) => g.classList.toggle("is-off", Number(g.dataset.i) < built || final));
+    qsa(".iso-callout", root).forEach((g) => {
+      const i = Number(g.dataset.i);
       g.classList.toggle("is-on", i < built && !final);
       g.classList.toggle("is-current", i === current && !final);
     });
-    qsa(".iso-tall", root).forEach((g) => g.classList.toggle("is-on", final));
-    qsa(".iso-slot", root).forEach((g) => g.classList.toggle("is-off", Number(g.dataset.i) < built || final));
+    qsa(".office-part", root).forEach((g) => {
+      const need = g.dataset.need;
+      g.classList.toggle("is-on", need === "final" ? final : Number(need) < built || final);
+    });
     root.classList.toggle("is-final", final);
   }
 
@@ -145,7 +358,8 @@
     const small = (el) => (el?.clientWidth || 0) < 560;
     const hero = qs("#hero-iso");
     if (hero) {
-      hero.innerHTML = buildIso({ labels: small(hero) ? "num" : "full", contourLabels: !small(hero) });
+      // Первый экран: только офис и три зоны направлений; модули раскрываются в блоке «Система».
+      hero.innerHTML = buildIso({ labels: small(hero) ? "num" : "full", contourLabels: !small(hero), slotNumbers: false });
       setIsoState(hero, 0, -1, false);
     }
     const system = qs("#system-iso");
@@ -155,17 +369,43 @@
     }
     const fin = qs("#final-iso");
     if (fin) {
-      fin.innerHTML = buildIso({ labels: "num", contourLabels: false, grid: false, legend: false, lit: true, height: 480 });
+      // Финальный офис: все детали, клиент у двери, предметы на модулях; импульсов нет.
+      fin.innerHTML = buildIso({ labels: "num", contourLabels: false, grid: false, legend: false, lit: true, height: 540 });
+      qs(".iso-pulse", fin)?.remove();
       setIsoState(fin, 8, -1, true);
     }
   }
 
   /* ---------------------------------------------------------------- system scene */
-  let systemState = { built: 0, current: -1, final: false };
+  // До подключения наблюдателя схема в финальном состоянии: если что-то не загрузится, ничего не останется скрытым.
+  let systemState = { built: 8, current: -1, final: true };
+  let lastCurrent = -1;
+
+  function playPulse(root, index) {
+    const tile = root && qs(`.iso-tile[data-i="${index}"]`, root);
+    const pulse = root && qs(".iso-pulse", root);
+    if (!tile || !pulse) return;
+    const sx = Number(tile.dataset.sx), sy = Number(tile.dataset.sy);
+    const tx = Number(pulse.dataset.tx), ty = Number(pulse.dataset.ty);
+    const path = qs(".pulse-path", pulse), dot = qs(".pulse-dot", pulse);
+    path.setAttribute("x1", sx); path.setAttribute("y1", sy); path.setAttribute("x2", tx); path.setAttribute("y2", ty);
+    path.style.stroke = tile.dataset.tone;
+    dot.setAttribute("transform", `translate(${sx} ${sy})`);
+    dot.style.fill = tile.dataset.tone;
+    dot.style.setProperty("--dx", `${tx - sx}px`);
+    dot.style.setProperty("--dy", `${ty - sy}px`);
+    pulse.classList.remove("is-playing");
+    pulse.getBoundingClientRect();
+    pulse.classList.add("is-playing");
+    dot.addEventListener("animationend", () => pulse.classList.remove("is-playing"), { once: true });
+  }
   function applySystemState() {
     const root = qs("#system-iso");
     const s = !reducedMotion ? systemState : { built: 8, current: -1, final: true };
     setIsoState(root, s.built, s.current, s.final);
+    // Импульс только при движении вперёд к новому модулю; при прокрутке назад — нет.
+    if (!reducedMotion && !s.final && s.current > lastCurrent) playPulse(root, s.current);
+    lastCurrent = s.final ? 8 : s.current;
     const legend = qs("#system-legend");
     const modules = content.modules || [];
     const contours = content.contours || [];
@@ -204,7 +444,7 @@
 
   function configureSystemScroll() {
     const steps = qsa(".step", qs("#system-steps"));
-    if (!steps.length || !("IntersectionObserver" in window)) { applySystemState(); return; }
+    if (!steps.length || !("IntersectionObserver" in window) || reducedMotion) { systemState = { built: 8, current: -1, final: true }; applySystemState(); return; }
     const observer = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
         if (!entry.isIntersecting) return;
