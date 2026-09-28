@@ -276,7 +276,8 @@
   }
 
   /* ---------------------------------------------------------------- system scene */
-  let systemState = { built: 0, current: -1, final: false };
+  // До подключения наблюдателя схема в финальном состоянии: если что-то не загрузится, ничего не останется скрытым.
+  let systemState = { built: 8, current: -1, final: true };
   let lastCurrent = -1;
 
   function playPulse(root, index) {
@@ -341,7 +342,7 @@
 
   function configureSystemScroll() {
     const steps = qsa(".step", qs("#system-steps"));
-    if (!steps.length || !("IntersectionObserver" in window)) { applySystemState(); return; }
+    if (!steps.length || !("IntersectionObserver" in window) || reducedMotion) { systemState = { built: 8, current: -1, final: true }; applySystemState(); return; }
     const observer = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
         if (!entry.isIntersecting) return;
