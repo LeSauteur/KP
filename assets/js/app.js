@@ -150,6 +150,42 @@
       `<line x1="${a.toFixed(1)}" y1="${b.toFixed(1)}" x2="${c.toFixed(1)}" y2="${d.toFixed(1)}" stroke="${stroke}" stroke-width="1.4"></line>`;
   }
 
+  // Предмет на верхней грани модуля: рисуется в тоне направления, занимает заднюю часть грани.
+  function moduleIcon(I, icon, cx, cy, z, tone) {
+    const ink = tone.ink;
+    const py = (x0, x1, z0, z1, fill, stroke = ink, sw = 1) => I.poly([[x0, cy, z0], [x1, cy, z0], [x1, cy, z1], [x0, cy, z1]], fill, stroke, sw);
+    const ln = (a, b, sw = 1.4) => I.line(a, b, ink, sw);
+    const dot = (x, y, zz, r, fill, stroke = ink) => { const [a, b] = I.p(x, y, zz); return `<circle cx="${a.toFixed(1)}" cy="${b.toFixed(1)}" r="${(I.S * r).toFixed(1)}" fill="${fill}" stroke="${stroke}" stroke-width="1.4"></circle>`; };
+    switch (icon) {
+      case "crm":
+        return ln([cx, cy, z], [cx, cy, z + 0.05]) + py(cx - 0.15, cx + 0.15, z + 0.05, z + 0.26, WHITE) +
+          py(cx - 0.11, cx + 0.03, z + 0.17, z + 0.21, tone.right, "none", 0) + py(cx - 0.11, cx + 0.09, z + 0.09, z + 0.13, tone.top, ink, 0.8);
+      case "newbuild":
+        return boxZ(I, cx - 0.08, cy - 0.08, cx + 0.08, cy + 0.08, z, 0.34, WHITE, tone.top, tone.right, ink, 1) +
+          ln([cx + 0.08, cy - 0.05, z + 0.12], [cx + 0.08, cy + 0.05, z + 0.12], 1) + ln([cx + 0.08, cy - 0.05, z + 0.22], [cx + 0.08, cy + 0.05, z + 0.22], 1);
+      case "legal":
+        return I.poly([[cx - 0.13, cy - 0.15, z], [cx + 0.13, cy - 0.15, z], [cx + 0.13, cy + 0.15, z], [cx - 0.13, cy + 0.15, z]], WHITE, ink, 1) +
+          ln([cx - 0.08, cy - 0.1, z], [cx + 0.08, cy - 0.1, z], 1) + ln([cx - 0.08, cy - 0.04, z], [cx + 0.05, cy - 0.04, z], 1) +
+          dot(cx + 0.04, cy + 0.07, z, 0.035, "none");
+      case "partners":
+        return boxZ(I, cx - 0.1, cy - 0.1, cx + 0.1, cy + 0.1, z, 0.13, WHITE, tone.top, tone.right, ink, 1) + keySvg(I, cx, cy, z + 0.13, ink);
+      case "dashboard":
+        return py(cx - 0.15, cx + 0.15, z + 0.02, z + 0.27, WHITE) +
+          py(cx - 0.11, cx - 0.05, z + 0.05, z + 0.12, ink, "none", 0) + py(cx - 0.03, cx + 0.03, z + 0.05, z + 0.17, ink, "none", 0) + py(cx + 0.05, cx + 0.11, z + 0.05, z + 0.23, ink, "none", 0);
+      case "franchise":
+        return I.poly([[cx - 0.14, cy, z + 0.1], [cx - 0.06, cy, z + 0.1], [cx - 0.15, cy, z + 0.02]], WHITE, ink, 1) +
+          py(cx - 0.15, cx + 0.14, z + 0.1, z + 0.27, WHITE) + ln([cx - 0.1, cy, z + 0.21], [cx + 0.08, cy, z + 0.21], 1.2) + ln([cx - 0.1, cy, z + 0.15], [cx + 0.03, cy, z + 0.15], 1.2);
+      case "hiring":
+        return figure(I, cx - 0.07, cy + 0.05, z, tone.top) + figure(I, cx + 0.07, cy - 0.05, z, tone.top);
+      case "training":
+        return ln([cx - 0.09, cy, z + 0.1], [cx - 0.12, cy, z]) + ln([cx + 0.09, cy, z + 0.1], [cx + 0.12, cy, z]) +
+          py(cx - 0.13, cx + 0.13, z + 0.1, z + 0.32, WHITE) +
+          `<polyline points="${[[-0.09, 0.14], [-0.03, 0.2], [0.02, 0.17], [0.09, 0.27]].map(([dx, dz]) => I.p(cx + dx, cy, z + dz).map((v) => v.toFixed(1)).join(",")).join(" ")}" fill="none" stroke="${ink}" stroke-width="1.4"></polyline>`;
+      default:
+        return "";
+    }
+  }
+
   function buildIso(options) {
     const { width = 720, height = 540, S = 120, ox = 360, oy = 110, labels = "full", contourLabels = true, grid = true, legend = false, lit = false } = options;
     const I = makeIso(S, ox, oy);
@@ -178,9 +214,10 @@
       const x0 = i + G, y0 = j + G, x1 = i + 1 - G, y1 = j + 1 - G;
       const name = modules[n]?.short || "";
       const tone = TONES[modules[n]?.contour ?? 0] || TONES[0];
-      const label = (h) => labels === "full"
-        ? I.text(i + 0.46, j + 0.46, h, pad(n + 1), fs - 1, INK2, -8) + I.text(i + 0.46, j + 0.46, h, name, fs - 1, INK, 10)
-        : I.text(i + 0.5, j + 0.5, h, pad(n + 1), fs, INK2, 5);
+      // Предмет — в задней части грани, подпись — в передней, чтобы не перекрывались.
+      const label = (h) => moduleIcon(I, modules[n]?.icon, i + 0.36, j + 0.36, h, tone) + (labels === "full"
+        ? I.text(i + 0.68, j + 0.68, h, pad(n + 1), fs - 1, INK2, -6) + I.text(i + 0.68, j + 0.68, h, name, fs - 2, INK, 10)
+        : I.text(i + 0.7, j + 0.7, h, pad(n + 1), fs, INK2, 8));
       body += `<g class="iso-slot" data-i="${n}">${I.poly([[x0, y0, 0], [x1, y0, 0], [x1, y1, 0], [x0, y1, 0]], "none", "#A9A49A", 1.2, 'stroke-dasharray="5 5" pathLength="1" class="draw-dash"')}${I.text(i + 0.5, j + 0.5, 0, pad(n + 1), fs, INK2, 5)}</g>`;
       body += `<g class="iso-tile" data-i="${n}">${I.box(x0, y0, x1, y1, 0.16, tone.top, tone.left, tone.right)}${label(0.16)}</g>`;
       body += `<g class="iso-tall" data-i="${n}">${I.box(x0, y0, x1, y1, TALL[n], tone.top, tone.left, tone.right)}${label(TALL[n])}</g>`;
