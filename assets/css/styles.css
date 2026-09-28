@@ -564,3 +564,8 @@ sup.fn a:hover { color: var(--red); }
   .model-roles dl > div, .model-roles dl > div + div { padding: 8px 0; border-left: 0; }
   .model-roles dl > div + div { border-top: 1px solid var(--faint); }
 }
+
+/* ---------- Living office: details appear as modules connect ---------- */
+.office-sign { font-family: var(--sans); font-weight: 600; letter-spacing: .02em; }
+.office-part { opacity: 0; transform: translateY(-5px); transition: opacity .35s ease, transform .35s var(--ease); }
+.office-part.is-on { opacity: 1; transform: none; }

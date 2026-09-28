@@ -61,28 +61,93 @@
       poly([[x1, y0, 0], [x1, y1, 0], [x1, y1, h], [x1, y0, h]], right, stroke, sw) +
       poly([[x0, y1, 0], [x1, y1, 0], [x1, y1, h], [x0, y1, h]], left, stroke, sw) +
       poly([[x0, y0, h], [x1, y0, h], [x1, y1, h], [x0, y1, h]], top, stroke, sw);
+    const line = (a, b, stroke = INK, sw = 1) => {
+      const [x1, y1] = p(...a), [x2, y2] = p(...b);
+      return `<line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="${stroke}" stroke-width="${sw}"></line>`;
+    };
     const text = (x, y, z, s, size, color, dy = 0, anchor = "middle") => {
       const [a, b] = p(x, y, z);
       return `<text x="${a.toFixed(1)}" y="${(b + dy).toFixed(1)}" text-anchor="${anchor}" class="iso-text" font-size="${size}" fill="${color}">${escapeHtml(s)}</text>`;
     };
-    return { p, poly, box, text, S };
+    return { p, poly, box, line, text, S };
   }
 
+  // Офис рисуется в собственных координатах клетки: dx, dy от 0 до L, z — высота.
+  // Детали с data-need появляются, когда подключён модуль с этим индексом ("final" — в финале).
   function officeSvg(I, lit) {
-    const x0 = 1 + G, y0 = 1 + G, x1 = 2 - G, y1 = 2 - G, hw = 0.42;
+    const X = 1 + G, Y = 1 + G, L = 1 - 2 * G, hw = 0.42;
     const draw = 'pathLength="1" class="draw"';
-    let o = "";
-    o += I.poly([[x0, y0, 0], [x1, y0, 0], [x1, y1, 0], [x0, y1, 0]], lit ? "#FFF3F2" : WHITE, RED, 2, draw);
-    o += I.poly([[x0, y0, 0], [x1, y0, 0], [x1, y0, hw], [x0, y0, hw]], "#F7F4EF", RED, 2, draw);
-    o += I.poly([[x0, y0, 0], [x0, y1, 0], [x0, y1, hw], [x0, y0, hw]], "#EFEBE4", RED, 2, draw);
-    o += I.poly([[x0 + 0.28, y0, 0.16], [x0 + 0.62, y0, 0.16], [x0 + 0.62, y0, 0.33], [x0 + 0.28, y0, 0.33]], "#E4EBEF", INK, 1);
-    o += I.poly([[x0, y0 + 0.52, 0], [x0, y0 + 0.72, 0], [x0, y0 + 0.72, 0.3], [x0, y0 + 0.52, 0.3]], "#E2DDD4", INK, 1);
-    [[0.18, 0.2], [0.18, 0.5]].forEach(([dx, dy]) => {
-      o += I.box(x0 + dx, y0 + dy, x0 + dx + 0.3, y0 + dy + 0.16, 0.1, WHITE, "#E6E2DA", "#DAD5CB", INK, 1);
-      o += I.box(x0 + dx + 0.34, y0 + dy + 0.04, x0 + dx + 0.42, y0 + dy + 0.12, 0.06, lit ? RED : WHITE, "#E6E2DA", "#DAD5CB", INK, 0.8);
+    const at = (dx, dy, z = 0) => [X + dx, Y + dy, z];
+    const wy = (a, b, z0, z1, fill, stroke = INK, sw = 1) => I.poly([at(a, 0, z0), at(b, 0, z0), at(b, 0, z1), at(a, 0, z1)], fill, stroke, sw);
+    const wx = (a, b, z0, z1, fill, stroke = INK, sw = 1) => I.poly([at(0, a, z0), at(0, b, z0), at(0, b, z1), at(0, a, z1)], fill, stroke, sw);
+    const part = (need, svg) => `<g class="office-part" data-need="${need}">${svg}</g>`;
+    const base = [];
+    const floor = [];
+    // Пол и две стены.
+    base.push(I.poly([at(0, 0), at(L, 0), at(L, L), at(0, L)], lit ? "#FFF3F2" : WHITE, RED, 2, draw));
+    base.push(I.poly([at(0, 0), at(L, 0), at(L, 0, hw), at(0, 0, hw)], "#F7F4EF", RED, 2, draw));
+    base.push(I.poly([at(0, 0), at(0, L), at(0, L, hw), at(0, 0, hw)], "#EFEBE4", RED, 2, draw));
+    // Окно, дверь и вывеска.
+    base.push(wy(0.56, 0.8, 0.12, 0.32, "#E4EBEF"));
+    base.push(part("final", wy(0.56, 0.8, 0.12, 0.32, "#FFE7A3")));
+    base.push(I.line(at(0.68, 0, 0.12), at(0.68, 0, 0.32), INK, 0.8));
+    base.push(wx(0.56, 0.78, 0, 0.3, "#E2DDD4"));
+    base.push(part("final", wy(0.04, 0.5, 0.29, 0.405, WHITE, RED, 1.2)));
+    const [sx, sy] = I.p(X + 0.07, Y, 0.305);
+    base.push(`<text class="office-sign" transform="matrix(0.866 0.5 0 1 ${sx.toFixed(1)} ${sy.toFixed(1)})" font-size="${(I.S * 0.085).toFixed(1)}" fill="${RED}">DОМИАН</text>`);
+    // 1 · Новостройки: постер с домом.
+    base.push(part(1, wy(0.06, 0.24, 0.07, 0.25, WHITE) +
+      wy(0.1, 0.2, 0.09, 0.16, TONES[0].right, INK, 0.8) +
+      I.poly([at(0.085, 0, 0.16), at(0.215, 0, 0.16), at(0.15, 0, 0.22)], TONES[0].ink, INK, 0.8)));
+    // 4 · Центр управления: доска со столбиками.
+    base.push(part(4, wy(0.28, 0.5, 0.07, 0.25, WHITE) +
+      wy(0.31, 0.35, 0.09, 0.14, TONES[1].ink, "none", 0) +
+      wy(0.37, 0.41, 0.09, 0.18, TONES[1].ink, "none", 0) +
+      wy(0.43, 0.47, 0.09, 0.22, TONES[1].ink, "none", 0)));
+    // 7 · Обучение: флипчарт у левой стены.
+    const fx = 0.07;
+    floor.push([0.3, part(7,
+      I.line(at(fx, 0.22, 0.1), at(fx, 0.2, 0), INK, 1) + I.line(at(fx, 0.38, 0.1), at(fx, 0.4, 0), INK, 1) +
+      I.poly([at(fx, 0.2, 0.1), at(fx, 0.4, 0.1), at(fx, 0.4, 0.31), at(fx, 0.2, 0.31)], WHITE, INK, 1) +
+      `<polyline points="${[[0.23, 0.14], [0.28, 0.19], [0.32, 0.17], [0.37, 0.26]].map(([y, z]) => I.p(X + fx, Y + y, z).map((v) => v.toFixed(1)).join(",")).join(" ")}" fill="none" stroke="${TONES[2].ink}" stroke-width="1.4"></polyline>`)]);
+    // Столы агентов: экран тёмный, с CRM светлый; агенты — с модулем найма.
+    [[0.13, 0.12], [0.44, 0.12], [0.44, 0.38]].forEach(([dx, dy]) => {
+      const mon = (fill) => I.poly([at(dx + 0.04, dy + 0.03, 0.08), at(dx + 0.18, dy + 0.03, 0.08), at(dx + 0.18, dy + 0.03, 0.18), at(dx + 0.04, dy + 0.03, 0.18)], fill, INK, 0.9);
+      floor.push([dx + dy, I.box(X + dx, Y + dy, X + dx + 0.22, Y + dy + 0.14, 0.08, WHITE, "#E6E2DA", "#DAD5CB", INK, 1) + mon("#2A2B30") +
+        part(0, mon("#EEF4F6") + I.line(at(dx + 0.06, dy + 0.03, 0.15), at(dx + 0.14, dy + 0.03, 0.15), TONES[0].ink, 1.4) + I.line(at(dx + 0.06, dy + 0.03, 0.115), at(dx + 0.12, dy + 0.03, 0.115), TONES[0].ink, 1.4))]);
+      floor.push([dx + dy + 0.3, part(6, figure(I, X + dx + 0.27, Y + dy + 0.08, 0, TONES[2].top))]);
     });
-    o += I.box(x0 + 0.58, y0 + 0.56, x0 + 0.76, y0 + 0.78, 0.09, WHITE, "#E6E2DA", "#DAD5CB", INK, 1);
-    return `<g class="iso-office">${o}</g>`;
+    // Ресепшн: красная стойка; на ней документы (2) и телефон (5), рядом коробка с ключом (3).
+    floor.push([1.3, I.box(X + 0.5, Y + 0.58, X + 0.8, Y + 0.72, 0.11, "#E4474D", RED, "#A8070D", INK, 1) +
+      part(2, I.poly([at(0.54, 0.6, 0.11), at(0.65, 0.6, 0.11), at(0.65, 0.69, 0.11), at(0.54, 0.69, 0.11)], WHITE, INK, 0.9) +
+        `<circle cx="${I.p(X + 0.6, Y + 0.645, 0.11)[0].toFixed(1)}" cy="${I.p(X + 0.6, Y + 0.645, 0.11)[1].toFixed(1)}" r="${(I.S * 0.018).toFixed(1)}" fill="${RED}"></circle>`) +
+      part(5, boxZ(I, X + 0.7, Y + 0.6, X + 0.76, Y + 0.67, 0.11, 0.035, "#3A3C42", "#2A2B30", "#1E1F23"))]);
+    floor.push([1.08, part(3, boxZ(I, X + 0.38, Y + 0.6, X + 0.46, Y + 0.7, 0, 0.07, TONES[0].top, TONES[0].left, TONES[0].right) +
+      keySvg(I, X + 0.42, Y + 0.65, 0.07, INK))]);
+    // Финал: клиент у двери.
+    floor.push([0.8, part("final", figure(I, X + 0.1, Y + 0.7, 0, "#CFC9BE"))]);
+    floor.sort((a, b) => a[0] - b[0]);
+    return `<g class="iso-office">${base.join("")}${floor.map((f) => f[1]).join("")}</g>`;
+  }
+
+  function boxZ(I, x0, y0, x1, y1, z, h, top, left, right, stroke = INK, sw = 1) {
+    return I.poly([[x1, y0, z], [x1, y1, z], [x1, y1, z + h], [x1, y0, z + h]], right, stroke, sw) +
+      I.poly([[x0, y1, z], [x1, y1, z], [x1, y1, z + h], [x0, y1, z + h]], left, stroke, sw) +
+      I.poly([[x0, y0, z + h], [x1, y0, z + h], [x1, y1, z + h], [x0, y1, z + h]], top, stroke, sw);
+  }
+
+  // Геометрическая фигурка без лица: корпус и голова.
+  function figure(I, x, y, z, fill) {
+    const [hx, hy] = I.p(x, y, z + 0.19);
+    return boxZ(I, x - 0.03, y - 0.03, x + 0.03, y + 0.03, z, 0.13, fill, fill, fill, INK, 1) +
+      `<circle cx="${hx.toFixed(1)}" cy="${hy.toFixed(1)}" r="${(I.S * 0.036).toFixed(1)}" fill="${fill}" stroke="${INK}" stroke-width="1"></circle>`;
+  }
+
+  function keySvg(I, x, y, z, stroke) {
+    const [a, b] = I.p(x - 0.02, y, z);
+    const [c, d] = I.p(x + 0.05, y, z);
+    return `<circle cx="${a.toFixed(1)}" cy="${b.toFixed(1)}" r="${(I.S * 0.018).toFixed(1)}" fill="none" stroke="${stroke}" stroke-width="1.4"></circle>` +
+      `<line x1="${a.toFixed(1)}" y1="${b.toFixed(1)}" x2="${c.toFixed(1)}" y2="${d.toFixed(1)}" stroke="${stroke}" stroke-width="1.4"></line>`;
   }
 
   function buildIso(options) {
@@ -138,6 +203,10 @@
     });
     qsa(".iso-tall", root).forEach((g) => g.classList.toggle("is-on", final));
     qsa(".iso-slot", root).forEach((g) => g.classList.toggle("is-off", Number(g.dataset.i) < built || final));
+    qsa(".office-part", root).forEach((g) => {
+      const need = g.dataset.need;
+      g.classList.toggle("is-on", need === "final" ? final : Number(need) < built || final);
+    });
     root.classList.toggle("is-final", final);
   }
 
