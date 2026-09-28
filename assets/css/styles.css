@@ -569,3 +569,17 @@ sup.fn a:hover { color: var(--red); }
 .office-sign { font-family: var(--sans); font-weight: 600; letter-spacing: .02em; }
 .office-part { opacity: 0; transform: translateY(-5px); transition: opacity .35s ease, transform .35s var(--ease); }
 .office-part.is-on { opacity: 1; transform: none; }
+
+/* ---------- Pulse from module to office: plays once per step ---------- */
+.iso-pulse { pointer-events: none; }
+.pulse-path { opacity: 0; stroke-width: 1.5; stroke-dasharray: 4 5; }
+.pulse-dot { opacity: 0; }
+.iso-pulse.is-playing .pulse-path { animation: pulse-path .9s ease forwards; }
+.iso-pulse.is-playing .pulse-dot { animation: pulse-move .8s var(--ease) forwards; }
+@keyframes pulse-path { 0% { opacity: 0; } 30% { opacity: .9; } 100% { opacity: 0; } }
+@keyframes pulse-move {
+  0% { opacity: 0; translate: 0 0; }
+  12% { opacity: 1; }
+  80% { opacity: 1; }
+  100% { opacity: 0; translate: var(--dx) var(--dy); }
+}

@@ -220,16 +220,21 @@
         ? I.text(i + 0.68, j + 0.68, h, pad(n + 1), fs - 1, INK2, -6) + I.text(i + 0.68, j + 0.68, h, name, fs - 2, INK, 10)
         : I.text(i + 0.7, j + 0.7, h, pad(n + 1), fs, INK2, 8));
       body += `<g class="iso-slot" data-i="${n}">${I.poly([[x0, y0, 0], [x1, y0, 0], [x1, y1, 0], [x0, y1, 0]], "none", "#A9A49A", 1.2, 'stroke-dasharray="5 5" pathLength="1" class="draw-dash"')}${I.text(i + 0.5, j + 0.5, 0, pad(n + 1), fs, INK2, 5)}</g>`;
-      body += `<g class="iso-tile" data-i="${n}">${I.box(x0, y0, x1, y1, 0.16, tone.top, tone.left, tone.right)}${label(0.16)}</g>`;
+      const [sx0, sy0] = I.p(i + 0.5, j + 0.5, 0);
+      body += `<g class="iso-tile" data-i="${n}" data-sx="${sx0.toFixed(1)}" data-sy="${sy0.toFixed(1)}" data-tone="${tone.ink}">${I.box(x0, y0, x1, y1, 0.16, tone.top, tone.left, tone.right)}${label(0.16)}</g>`;
       body += `<g class="iso-tall" data-i="${n}">${I.box(x0, y0, x1, y1, TALL[n], tone.top, tone.left, tone.right)}${label(TALL[n])}</g>`;
     });
+    // Импульс: маркер бежит по полу от текущего модуля к офису. Координаты — в data-атрибутах плиток.
+    const pulseSize = labels === "full" ? 10 : 22;
+    const [tx, ty] = I.p(1.5, 1.5, 0);
+    const pulse = `<g class="iso-pulse" data-tx="${tx.toFixed(1)}" data-ty="${ty.toFixed(1)}"><line class="pulse-path" x1="0" y1="0" x2="0" y2="0"></line><rect class="pulse-dot" x="${-pulseSize / 2}" y="${-pulseSize / 2}" width="${pulseSize}" height="${pulseSize}"></rect></g>`;
     let legendSvg = "";
     if (legend) {
       const lx = I.p(0, 3)[0] + 30, ly = I.p(3, 3)[1] + 30;
       legendSvg = `<rect x="${lx}" y="${ly - 11}" width="16" height="12" fill="none" stroke="${RED}" stroke-width="2"></rect>` +
         `<text x="${lx + 26}" y="${ly}" class="iso-text" font-size="${labels === "full" ? 15 : 24}" fill="${RED}">ВАШ ОФИС</text>`;
     }
-    return `<svg viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg" focusable="false">${floor}${body}${legendSvg}</svg>`;
+    return `<svg viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg" focusable="false">${floor}${body}${pulse}${legendSvg}</svg>`;
   }
 
   function setIsoState(root, built, current, final) {
@@ -269,10 +274,32 @@
 
   /* ---------------------------------------------------------------- system scene */
   let systemState = { built: 0, current: -1, final: false };
+  let lastCurrent = -1;
+
+  function playPulse(root, index) {
+    const tile = root && qs(`.iso-tile[data-i="${index}"]`, root);
+    const pulse = root && qs(".iso-pulse", root);
+    if (!tile || !pulse) return;
+    const sx = Number(tile.dataset.sx), sy = Number(tile.dataset.sy);
+    const tx = Number(pulse.dataset.tx), ty = Number(pulse.dataset.ty);
+    const path = qs(".pulse-path", pulse), dot = qs(".pulse-dot", pulse);
+    path.setAttribute("x1", sx); path.setAttribute("y1", sy); path.setAttribute("x2", tx); path.setAttribute("y2", ty);
+    path.style.stroke = tile.dataset.tone;
+    dot.setAttribute("transform", `translate(${sx} ${sy})`);
+    dot.style.fill = tile.dataset.tone;
+    dot.style.setProperty("--dx", `${tx - sx}px`);
+    dot.style.setProperty("--dy", `${ty - sy}px`);
+    pulse.classList.remove("is-playing");
+    pulse.getBoundingClientRect();
+    pulse.classList.add("is-playing");
+  }
   function applySystemState() {
     const root = qs("#system-iso");
     const s = !reducedMotion ? systemState : { built: 8, current: -1, final: true };
     setIsoState(root, s.built, s.current, s.final);
+    // Импульс только при движении вперёд к новому модулю; при прокрутке назад — нет.
+    if (!reducedMotion && !s.final && s.current > lastCurrent) playPulse(root, s.current);
+    lastCurrent = s.final ? 8 : s.current;
     const legend = qs("#system-legend");
     const modules = content.modules || [];
     const contours = content.contours || [];
