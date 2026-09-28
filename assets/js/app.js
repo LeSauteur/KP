@@ -268,7 +268,9 @@
     }
     const fin = qs("#final-iso");
     if (fin) {
+      // Финальный офис: все детали, клиент у двери, предметы на модулях; импульсов нет.
       fin.innerHTML = buildIso({ labels: "num", contourLabels: false, grid: false, legend: false, lit: true, height: 480 });
+      qs(".iso-pulse", fin)?.remove();
       setIsoState(fin, 8, -1, true);
     }
   }
