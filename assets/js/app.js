@@ -188,7 +188,7 @@
   }
 
   function buildIso(options) {
-    const { width = 720, height = 540, S = 120, ox = 360, oy = 110, labels = "full", contourLabels = true, grid = true, legend = false, lit = false } = options;
+    const { width = 720, height = 540, S = 120, ox = 360, oy = 110, labels = "full", contourLabels = true, grid = true, legend = false, lit = false, slotNumbers = true } = options;
     const I = makeIso(S, ox, oy);
     const modules = Array.isArray(content.modules) ? content.modules : [];
     const contours = Array.isArray(content.contours) ? content.contours : [];
@@ -219,7 +219,7 @@
       const label = (h) => moduleIcon(I, modules[n]?.icon, i + 0.36, j + 0.36, h, tone) + (labels === "full"
         ? I.text(i + 0.68, j + 0.68, h, pad(n + 1), fs - 1, INK2, -6) + I.text(i + 0.68, j + 0.68, h, name, fs - 2, INK, 10)
         : I.text(i + 0.7, j + 0.7, h, pad(n + 1), fs, INK2, 8));
-      body += `<g class="iso-slot" data-i="${n}">${I.poly([[x0, y0, 0], [x1, y0, 0], [x1, y1, 0], [x0, y1, 0]], "none", "#A9A49A", 1.2, 'stroke-dasharray="5 5" pathLength="1" class="draw-dash"')}${I.text(i + 0.5, j + 0.5, 0, pad(n + 1), fs, INK2, 5)}</g>`;
+      body += `<g class="iso-slot" data-i="${n}">${I.poly([[x0, y0, 0], [x1, y0, 0], [x1, y1, 0], [x0, y1, 0]], "none", "#A9A49A", 1.2, 'stroke-dasharray="5 5" pathLength="1" class="draw-dash"')}${slotNumbers ? I.text(i + 0.5, j + 0.5, 0, pad(n + 1), fs, INK2, 5) : ""}</g>`;
       const [sx0, sy0] = I.p(i + 0.5, j + 0.5, 0);
       body += `<g class="iso-tile" data-i="${n}" data-sx="${sx0.toFixed(1)}" data-sy="${sy0.toFixed(1)}" data-tone="${tone.ink}">${I.box(x0, y0, x1, y1, 0.16, tone.top, tone.left, tone.right)}${label(0.16)}</g>`;
       body += `<g class="iso-tall" data-i="${n}">${I.box(x0, y0, x1, y1, TALL[n], tone.top, tone.left, tone.right)}${label(TALL[n])}</g>`;
@@ -257,7 +257,8 @@
     const small = (el) => (el?.clientWidth || 0) < 560;
     const hero = qs("#hero-iso");
     if (hero) {
-      hero.innerHTML = buildIso({ labels: small(hero) ? "num" : "full", contourLabels: !small(hero) });
+      // Первый экран: только офис и три зоны направлений; модули раскрываются в блоке «Система».
+      hero.innerHTML = buildIso({ labels: small(hero) ? "num" : "full", contourLabels: !small(hero), slotNumbers: false });
       setIsoState(hero, 0, -1, false);
     }
     const system = qs("#system-iso");
