@@ -48,8 +48,6 @@
   const SLOTS = [[0, 1], [0, 0], [1, 0], [2, 0], [2, 1], [2, 2], [1, 2], [0, 2]];
   // Клетки перед офисом: их блоки рисуются «в разрезе», чтобы офис оставался виден.
   const FRONT = new Set(["2,1", "2,2", "1,2"]);
-  // Все модули одной высоты: важность направлений не различается, разнообразие дают предметы.
-  const TALL = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5];
   const OUTLINES = [
     { pts: [[0, 0], [3, 0], [3, 1], [1, 1], [1, 2], [0, 2]], label: [-0.9, -0.3], anchor: "end" },
     { pts: [[2, 1], [3, 1], [3, 3], [2, 3]], label: [3.06, 2.77], anchor: "start" },
@@ -189,8 +187,69 @@
     }
   }
 
+  // Финал системы: модули собираются в трёхэтажное здание. Этаж = направление.
+  // Первый этаж — ваш офис со стеклянным фасадом (живой офис виден внутри), выше — управление и команда.
+  function buildingSvg(I, labels) {
+    const X0 = 0.8, X1 = 2.2, Y0 = 0.8, Y1 = 2.2;
+    const floors = [[0, 0.72], [0.72, 1.22], [1.22, 1.72]];
+    const contours = Array.isArray(content.contours) ? content.contours : [];
+    const modules = Array.isArray(content.modules) ? content.modules : [];
+    const faceR = (z0, z1, fill, extra = "") => I.poly([[X1, Y0, z0], [X1, Y1, z0], [X1, Y1, z1], [X1, Y0, z1]], fill, INK, 1.2, extra);
+    const faceL = (z0, z1, fill, extra = "") => I.poly([[X0, Y1, z0], [X1, Y1, z0], [X1, Y1, z1], [X0, Y1, z1]], fill, INK, 1.2, extra);
+    const mullions = (z0, z1, step, sw = 0.8) => {
+      let o = "";
+      for (let t = X0 + step; t < X1 - 0.01; t += step) o += I.line([t, Y1, z0], [t, Y1, z1], INK, sw);
+      for (let t = Y0 + step; t < Y1 - 0.01; t += step) o += I.line([X1, t, z0], [X1, t, z1], INK, sw);
+      return o;
+    };
+    const part = (d, svg) => `<g class="bld-part" style="--d:${d}ms">${svg}</g>`;
+    let o = "";
+    // Первый этаж: стекло, красная полоса с вывеской, вход.
+    const [g0, g1] = floors[0];
+    o += part(0,
+      faceR(g0, g1, "#EEF3F4", 'fill-opacity=".16"') + faceL(g0, g1, "#EEF3F4", 'fill-opacity=".16"') + mullions(g0, 0.6, 0.35, 0.6) +
+      faceR(0.6, g1, RED) + faceL(0.6, g1, RED) +
+      I.poly([[1.72, Y1, 0], [1.98, Y1, 0], [1.98, Y1, 0.36], [1.72, Y1, 0.36]], "#2A2B30", INK, 1, 'fill-opacity=".35"'));
+    const [sx, sy] = I.p(X0 + 0.18, Y1, 0.63);
+    o += part(0, `<text class="office-sign" transform="matrix(0.866 0.5 0 1 ${sx.toFixed(1)} ${sy.toFixed(1)})" font-size="${(I.S * 0.085).toFixed(1)}" fill="${WHITE}">DОМИАН</text>`);
+    // 2-й и 3-й этажи: плиты в тоне направления с полосой остекления.
+    [1, 2].forEach((k) => {
+      const [z0, z1] = floors[k];
+      const t = TONES[k];
+      o += part(180 * k,
+        faceR(z0, z1, t.right) + faceL(z0, z1, t.left) +
+        faceR(z0 + 0.15, z1 - 0.13, "#EEF3F4") + faceL(z0 + 0.15, z1 - 0.13, "#EEF3F4") + mullions(z0 + 0.15, z1 - 0.13, 0.35));
+    });
+    // Крыша, парапет и вентиляция.
+    const top = floors[2][1];
+    o += part(540,
+      I.poly([[X0, Y0, top], [X1, Y0, top], [X1, Y1, top], [X0, Y1, top]], "#E9E6DF", INK, 1.2) +
+      I.poly([[X0 + 0.08, Y0 + 0.08, top], [X1 - 0.08, Y0 + 0.08, top], [X1 - 0.08, Y1 - 0.08, top], [X0 + 0.08, Y1 - 0.08, top]], "none", INK2, 0.8) +
+      boxZ(I, 1.0, 1.0, 1.3, 1.22, top, 0.12, WHITE, "#E2DED6", "#D6D1C7") +
+      boxZ(I, 1.5, 1.0, 1.72, 1.18, top, 0.09, WHITE, "#E2DED6", "#D6D1C7"));
+    // Выноски этажей справа: этаж, направление, номера модулей.
+    const full = labels === "full";
+    floors.forEach(([z0, z1], k) => {
+      const [ax, ay] = I.p(X1, Y0 + 0.3, (z0 + z1) / 2);
+      const nums = modules.map((m, i) => (m.contour === k ? pad(i + 1) : "")).filter(Boolean).join(" · ");
+      const tx = full ? 560 : ax + 34;
+      let tag;
+      if (full) {
+        tag = `<text x="${tx}" y="${(ay - 12).toFixed(1)}" class="iso-text" font-size="11" fill="${INK2}">ЭТАЖ ${k + 1}</text>` +
+          `<text x="${tx}" y="${(ay + 3).toFixed(1)}" class="iso-text" font-size="12" fill="${TONES[k].ink}">${escapeHtml((contours[k] || "").toUpperCase())}</text>` +
+          `<text x="${tx}" y="${(ay + 18).toFixed(1)}" class="iso-text" font-size="11" fill="${INK}">${nums}</text>`;
+      } else {
+        tag = `<rect x="${tx}" y="${(ay - 24).toFixed(1)}" width="48" height="44" fill="${WHITE}" stroke="${TONES[k].ink}" stroke-width="2"></rect>` +
+          `<text x="${tx + 24}" y="${(ay + 8).toFixed(1)}" text-anchor="middle" class="iso-text" font-size="26" fill="${TONES[k].ink}">${k + 1}</text>`;
+      }
+      o += part(180 * k + 300, `<circle cx="${ax.toFixed(1)}" cy="${ay.toFixed(1)}" r="${full ? 2.5 : 5}" fill="${INK}"></circle>` +
+        `<line x1="${ax.toFixed(1)}" y1="${ay.toFixed(1)}" x2="${(tx - 6).toFixed(1)}" y2="${ay.toFixed(1)}" stroke="${INK}" stroke-width="${full ? 1 : 2}"></line>` + tag);
+    });
+    return `<g class="iso-building">${o}</g>`;
+  }
+
   function buildIso(options) {
-    const { width = 720, height = 540, S = 120, ox = 360, oy = 110, labels = "full", contourLabels = true, grid = true, legend = false, lit = false, slotNumbers = true } = options;
+    const { width = 720, height = 580, S = 120, ox = 360, oy = 140, labels = "full", contourLabels = true, grid = true, legend = false, lit = false, slotNumbers = true } = options;
     const I = makeIso(S, ox, oy);
     const modules = Array.isArray(content.modules) ? content.modules : [];
     const contours = Array.isArray(content.contours) ? content.contours : [];
@@ -241,10 +300,11 @@
       };
       body += `<g class="iso-slot" data-i="${n}">${I.poly([[x0, y0, 0], [x1, y0, 0], [x1, y1, 0], [x0, y1, 0]], "none", "#A9A49A", 1.2, 'stroke-dasharray="5 5" pathLength="1" class="draw-dash"')}${slotNumbers ? I.text(i + 0.5, j + 0.5, 0, pad(n + 1), fs, INK2, 5) : ""}</g>`;
       const [sx0, sy0] = I.p(i + 0.5, j + 0.5, 0);
-      body += `<g class="iso-tile" data-i="${n}" data-sx="${sx0.toFixed(1)}" data-sy="${sy0.toFixed(1)}" data-tone="${tone.ink}"><g class="iso-shell${cut}">${I.box(x0, y0, x1, y1, 0.16, tone.top, tone.left, tone.right)}</g>${icon(0.16)}</g>`;
-      body += `<g class="iso-tall" data-i="${n}"><g class="iso-shell${cut}">${I.box(x0, y0, x1, y1, TALL[n], tone.top, tone.left, tone.right)}</g>${icon(TALL[n])}</g>`;
+      const [cx0, cy0] = I.p(1.5, 1.5, 0.7);
+      const gather = `--gx:${(cx0 - sx0).toFixed(1)}px;--gy:${(cy0 - sy0).toFixed(1)}px`;
+      body += `<g class="iso-tile" style="${gather}" data-i="${n}" data-sx="${sx0.toFixed(1)}" data-sy="${sy0.toFixed(1)}" data-tone="${tone.ink}"><g class="iso-shell${cut}">${I.box(x0, y0, x1, y1, 0.16, tone.top, tone.left, tone.right)}</g>${icon(0.16)}</g>`;
       // Подписи — отдельным верхним слоем, чтобы стены офиса не перекрывали их на низких плитках.
-      labelLayer += `<g class="iso-tile iso-label" data-i="${n}">${label(0.16)}</g><g class="iso-tall iso-label" data-i="${n}">${label(TALL[n])}</g>`;
+      labelLayer += `<g class="iso-tile iso-label" style="${gather}" data-i="${n}">${label(0.16)}</g>`;
     });
     // Импульс: маркер бежит по полу от текущего модуля к офису. Координаты — в data-атрибутах плиток.
     const pulseSize = labels === "full" ? 10 : 22;
@@ -256,17 +316,17 @@
       legendSvg = `<rect x="${lx}" y="${ly - 11}" width="16" height="12" fill="none" stroke="${RED}" stroke-width="2"></rect>` +
         `<text x="${lx + 26}" y="${ly}" class="iso-text" font-size="${labels === "full" ? 15 : 24}" fill="${RED}">ВАШ ОФИС</text>`;
     }
-    return `<svg viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg" focusable="false">${floor}${body}${labelLayer}${pulse}${legendSvg}</svg>`;
+    return `<svg viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg" focusable="false">${floor}${body}${buildingSvg(I, labels)}${labelLayer}${pulse}${legendSvg}</svg>`;
   }
 
   function setIsoState(root, built, current, final) {
     if (!root) return;
     qsa(".iso-tile", root).forEach((g) => {
       const i = Number(g.dataset.i);
-      g.classList.toggle("is-on", i < built && !final);
+      g.classList.toggle("is-on", i < built || final);
       g.classList.toggle("is-current", i === current && !final);
+      g.classList.toggle("is-gather", final);
     });
-    qsa(".iso-tall", root).forEach((g) => g.classList.toggle("is-on", final));
     qsa(".iso-slot", root).forEach((g) => g.classList.toggle("is-off", Number(g.dataset.i) < built || final));
     qsa(".office-part", root).forEach((g) => {
       const need = g.dataset.need;
@@ -291,7 +351,7 @@
     const fin = qs("#final-iso");
     if (fin) {
       // Финальный офис: все детали, клиент у двери, предметы на модулях; импульсов нет.
-      fin.innerHTML = buildIso({ labels: "num", contourLabels: false, grid: false, legend: false, lit: true, height: 480 });
+      fin.innerHTML = buildIso({ labels: "num", contourLabels: false, grid: false, legend: false, lit: true, height: 540 });
       qs(".iso-pulse", fin)?.remove();
       setIsoState(fin, 8, -1, true);
     }
@@ -318,6 +378,7 @@
     pulse.classList.remove("is-playing");
     pulse.getBoundingClientRect();
     pulse.classList.add("is-playing");
+    dot.addEventListener("animationend", () => pulse.classList.remove("is-playing"), { once: true });
   }
   function applySystemState() {
     const root = qs("#system-iso");

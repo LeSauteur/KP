@@ -588,3 +588,13 @@ sup.fn a:hover { color: var(--red); }
   .office-part, .iso-tile, .iso-tall { transition: none; }
 }
 .iso-shell.is-cut polygon { fill-opacity: .38; }
+
+/* ---------- Final: modules gather into a three-storey building ---------- */
+.iso-tile.is-gather { opacity: 0; transform: translate(var(--gx), var(--gy)); transition: opacity .5s ease, transform .6s var(--ease); }
+.bld-part { opacity: 0; transform: translateY(-28px); transition: opacity .45s ease var(--d, 0ms), transform .55s var(--ease) var(--d, 0ms); }
+.is-final .bld-part { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) {
+  .bld-part, .iso-tile.is-gather { transition: none; }
+}
+.iso-contour-label { transition: opacity .4s ease; }
+.is-final .iso-contour-label { opacity: 0; }
