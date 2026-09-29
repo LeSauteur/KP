@@ -397,9 +397,16 @@
     const small = (el) => (el?.clientWidth || 0) < 560;
     const hero = qs("#hero-iso");
     if (hero) {
-      // Первый экран: только офис и три зоны направлений; модули раскрываются в блоке «Система».
-      hero.innerHTML = buildIso({ labels: small(hero) ? "num" : "full", contourLabels: !small(hero), slotNumbers: false });
-      setIsoState(hero, 0, -1, false);
+      // Первый экран показывает готовый результат; ниже блок «Система» разбирает его по шагам.
+      const compact = small(hero);
+      hero.innerHTML = buildIso({
+        labels: compact ? "num" : "full",
+        contourLabels: !compact,
+        slotNumbers: false,
+        lit: true,
+        ...(compact ? { width: 620, height: 650, S: 160, ox: 310, oy: 170 } : {})
+      });
+      setIsoState(hero, Array.isArray(content.modules) ? content.modules.length : 8, -1, true);
     }
     const system = qs("#system-iso");
     if (system) {
