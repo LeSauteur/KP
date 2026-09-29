@@ -452,6 +452,11 @@
       else if (s.current >= 0) legend.textContent = `${pad(s.current + 1)} / ${pad(modules.length)} · Направление ${modules[s.current].contour + 1} · ${contours[modules[s.current].contour] || ""}`;
       else legend.textContent = `00 / ${pad(modules.length)} · только ваш офис`;
     }
+    const note = qs("#system-office-note");
+    if (note) {
+      const text = s.final ? content.officeFinal : s.current >= 0 ? modules[s.current].officeNote : content.officeStart;
+      note.textContent = clean(text) ? `В офисе: ${clean(text)}` : "";
+    }
     qsa(".step", qs("#system-steps")).forEach((step) => {
       const i = step.dataset.final ? -2 : Number(step.dataset.i);
       step.classList.toggle("is-active", (s.final && i === -2) || (!s.final && i === s.current));
