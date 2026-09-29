@@ -613,3 +613,4 @@ sup.fn a:hover { color: var(--red); }
 }
 .iso-contour-label { transition: opacity .4s ease; }
 .is-final .iso-contour-label { opacity: 0; }
+.office-note { flex-basis: 100%; color: var(--ink-2); font-family: var(--mono); font-size: 12px; line-height: 1.4; overflow-wrap: anywhere; }

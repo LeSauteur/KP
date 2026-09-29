@@ -73,60 +73,95 @@
     return { p, poly, box, line, text, S };
   }
 
-  // Офис рисуется в собственных координатах клетки: dx, dy от 0 до L, z — высота.
-  // Детали с data-need появляются, когда подключён модуль с этим индексом ("final" — в финале).
+  // Офис рассказывает одну историю: пустое помещение → рабочее место → витрина → зона сделки →
+  // клиентская стойка → место руководителя → связь с центром → команда → обучение → клиент.
+  // data-need — индекс модуля (0-based), с которым деталь появляется; "final" — только в финале.
+  // data-until — деталь видна, пока модуль с этим индексом ещё не подключён (руководитель уходит к флипчарту).
   function officeSvg(I, lit) {
     const X = 1 + G, Y = 1 + G, L = 1 - 2 * G, hw = 0.42;
     const draw = 'pathLength="1" class="draw"';
     const at = (dx, dy, z = 0) => [X + dx, Y + dy, z];
-    const wy = (a, b, z0, z1, fill, stroke = INK, sw = 1) => I.poly([at(a, 0, z0), at(b, 0, z0), at(b, 0, z1), at(a, 0, z1)], fill, stroke, sw);
+    const wy = (a, b, z0, z1, fill, stroke = INK, sw = 1, extra = "") => I.poly([at(a, 0, z0), at(b, 0, z0), at(b, 0, z1), at(a, 0, z1)], fill, stroke, sw, extra);
     const wx = (a, b, z0, z1, fill, stroke = INK, sw = 1) => I.poly([at(0, a, z0), at(0, b, z0), at(0, b, z1), at(0, a, z1)], fill, stroke, sw);
-    const part = (need, svg) => `<g class="office-part" data-need="${need}">${svg}</g>`;
+    const part = (need, svg, until) => `<g class="office-part" data-need="${need}"${until !== undefined ? ` data-until="${until}"` : ""}>${svg}</g>`;
+    const box = (dx0, dy0, dx1, dy1, h, top = WHITE, left = "#E6E2DA", right = "#DAD5CB", z = 0) => boxZ(I, X + dx0, Y + dy0, X + dx1, Y + dy1, z, h, top, left, right, INK, 1);
+    const person = (dx, dy, fill = TONES[2].top) => figure(I, X + dx, Y + dy, 0, fill);
+    // Монитор: панель вдоль стены wy на столе. CRM — светлый экран с полосками карточек.
+    const monitor = (dx, dy, w = 0.14) => I.poly([at(dx, dy, 0.08), at(dx + w, dy, 0.08), at(dx + w, dy, 0.18), at(dx, dy, 0.18)], "#EEF4F6", INK, 0.9) +
+      I.line(at(dx + 0.02, dy, 0.15), at(dx + w - 0.04, dy, 0.15), TONES[0].ink, 1.4) +
+      I.line(at(dx + 0.02, dy, 0.115), at(dx + w - 0.06, dy, 0.115), TONES[0].ink, 1.4);
+    const circleAt = (dx, dy, z, r, fill) => { const [a, b] = I.p(X + dx, Y + dy, z); return `<circle cx="${a.toFixed(1)}" cy="${b.toFixed(1)}" r="${(I.S * r).toFixed(1)}" fill="${fill}"></circle>`; };
     const base = [];
     const floor = [];
-    // Пол и две стены.
+
+    // Старт: пол и одна стена с пунктирным контуром будущей вывески.
     base.push(I.poly([at(0, 0), at(L, 0), at(L, L), at(0, L)], lit ? "#FFF3F2" : WHITE, RED, 2, draw));
     base.push(I.poly([at(0, 0), at(L, 0), at(L, 0, hw), at(0, 0, hw)], "#F7F4EF", RED, 2, draw));
-    base.push(I.poly([at(0, 0), at(0, L), at(0, L, hw), at(0, 0, hw)], "#EFEBE4", RED, 2, draw));
-    // Окно, дверь и вывеска.
-    base.push(wy(0.56, 0.8, 0.12, 0.32, "#E4EBEF"));
-    base.push(part("final", wy(0.56, 0.8, 0.12, 0.32, "#FFE7A3")));
-    base.push(I.line(at(0.68, 0, 0.12), at(0.68, 0, 0.32), INK, 0.8));
-    base.push(wx(0.56, 0.78, 0, 0.3, "#E2DDD4"));
-    base.push(part("final", wy(0.04, 0.5, 0.29, 0.405, WHITE, RED, 1.2)));
+    base.push(wy(0.04, 0.42, 0.29, 0.405, "none", RED, 1, 'stroke-dasharray="3 3"'));
     const [sx, sy] = I.p(X + 0.07, Y, 0.305);
-    base.push(`<text class="office-sign" transform="matrix(0.866 0.5 0 1 ${sx.toFixed(1)} ${sy.toFixed(1)})" font-size="${(I.S * 0.085).toFixed(1)}" fill="${RED}">DОМИАН</text>`);
-    // 1 · Новостройки: постер с домом.
-    base.push(part(1, wy(0.06, 0.24, 0.07, 0.25, WHITE) +
-      wy(0.1, 0.2, 0.09, 0.16, TONES[0].right, INK, 0.8) +
-      I.poly([at(0.085, 0, 0.16), at(0.215, 0, 0.16), at(0.15, 0, 0.22)], TONES[0].ink, INK, 0.8)));
-    // 4 · Центр управления: доска со столбиками.
-    base.push(part(4, wy(0.28, 0.5, 0.07, 0.25, WHITE) +
-      wy(0.31, 0.35, 0.09, 0.14, TONES[1].ink, "none", 0) +
-      wy(0.37, 0.41, 0.09, 0.18, TONES[1].ink, "none", 0) +
-      wy(0.43, 0.47, 0.09, 0.22, TONES[1].ink, "none", 0)));
-    // 7 · Обучение: флипчарт у левой стены.
-    const fx = 0.07;
-    floor.push([0.3, part(7,
-      I.line(at(fx, 0.22, 0.1), at(fx, 0.2, 0), INK, 1) + I.line(at(fx, 0.38, 0.1), at(fx, 0.4, 0), INK, 1) +
-      I.poly([at(fx, 0.2, 0.1), at(fx, 0.4, 0.1), at(fx, 0.4, 0.31), at(fx, 0.2, 0.31)], WHITE, INK, 1) +
-      `<polyline points="${[[0.23, 0.14], [0.28, 0.19], [0.32, 0.17], [0.37, 0.26]].map(([y, z]) => I.p(X + fx, Y + y, z).map((v) => v.toFixed(1)).join(",")).join(" ")}" fill="none" stroke="${TONES[2].ink}" stroke-width="1.4"></polyline>`)]);
-    // Столы агентов: экран тёмный, с CRM светлый; агенты — с модулем найма.
-    [[0.13, 0.12], [0.44, 0.12], [0.44, 0.38]].forEach(([dx, dy]) => {
-      const mon = (fill) => I.poly([at(dx + 0.04, dy + 0.03, 0.08), at(dx + 0.18, dy + 0.03, 0.08), at(dx + 0.18, dy + 0.03, 0.18), at(dx + 0.04, dy + 0.03, 0.18)], fill, INK, 0.9);
-      floor.push([dx + dy, I.box(X + dx, Y + dy, X + dx + 0.22, Y + dy + 0.14, 0.08, WHITE, "#E6E2DA", "#DAD5CB", INK, 1) + mon("#2A2B30") +
-        part(0, mon("#EEF4F6") + I.line(at(dx + 0.06, dy + 0.03, 0.15), at(dx + 0.14, dy + 0.03, 0.15), TONES[0].ink, 1.4) + I.line(at(dx + 0.06, dy + 0.03, 0.115), at(dx + 0.12, dy + 0.03, 0.115), TONES[0].ink, 1.4))]);
-      floor.push([dx + dy + 0.3, part(6, figure(I, X + dx + 0.27, Y + dy + 0.08, 0, TONES[2].top))]);
-    });
-    // Ресепшн: красная стойка; на ней документы (2) и телефон (5), рядом коробка с ключом (3).
-    floor.push([1.3, I.box(X + 0.5, Y + 0.58, X + 0.8, Y + 0.72, 0.11, "#E4474D", RED, "#A8070D", INK, 1) +
-      part(2, I.poly([at(0.54, 0.6, 0.11), at(0.65, 0.6, 0.11), at(0.65, 0.69, 0.11), at(0.54, 0.69, 0.11)], WHITE, INK, 0.9) +
-        `<circle cx="${I.p(X + 0.6, Y + 0.645, 0.11)[0].toFixed(1)}" cy="${I.p(X + 0.6, Y + 0.645, 0.11)[1].toFixed(1)}" r="${(I.S * 0.018).toFixed(1)}" fill="${RED}"></circle>`) +
-      part(5, boxZ(I, X + 0.7, Y + 0.6, X + 0.76, Y + 0.67, 0.11, 0.035, "#3A3C42", "#2A2B30", "#1E1F23"))]);
-    floor.push([1.08, part(3, boxZ(I, X + 0.38, Y + 0.6, X + 0.46, Y + 0.7, 0, 0.07, TONES[0].top, TONES[0].left, TONES[0].right) +
-      keySvg(I, X + 0.42, Y + 0.65, 0.07, INK))]);
-    // Финал: клиент у двери.
-    floor.push([0.8, part("final", figure(I, X + 0.1, Y + 0.7, 0, "#CFC9BE"))]);
+    const sign = (fill, stroke) => `<text class="office-sign" transform="matrix(0.866 0.5 0 1 ${sx.toFixed(1)} ${sy.toFixed(1)})" font-size="${(I.S * 0.085).toFixed(1)}" fill="${fill}" stroke="${stroke}" stroke-width="0.6">DОМИАН</text>`;
+    base.push(sign("none", RED));
+
+    // 0 · CRM — рабочее место: вторая стена с дверью, окно, стол агента со светящимся монитором.
+    base.push(part(0, I.poly([at(0, 0), at(0, L), at(0, L, hw), at(0, 0, hw)], "#EFEBE4", RED, 2) +
+      wx(0.5, 0.68, 0, 0.3, "#E2DDD4") +
+      wy(0.58, 0.8, 0.12, 0.32, "#E4EBEF") + I.line(at(0.69, 0, 0.12), at(0.69, 0, 0.32), INK, 0.8)));
+    floor.push([0.38, part(0, box(0.2, 0.12, 0.42, 0.26, 0.08) + monitor(0.24, 0.14))]);
+
+    // 1 · Новостройки — витрина: стенд с двумя домами на стене wy.
+    base.push(part(1, wy(0.04, 0.26, 0.06, 0.25, WHITE) +
+      wy(0.07, 0.13, 0.08, 0.17, TONES[0].right, INK, 0.8) +
+      I.poly([at(0.06, 0, 0.17), at(0.14, 0, 0.17), at(0.1, 0, 0.21)], TONES[0].ink, INK, 0.8) +
+      wy(0.16, 0.23, 0.08, 0.2, TONES[0].top, INK, 0.8) +
+      I.poly([at(0.15, 0, 0.2), at(0.24, 0, 0.2), at(0.195, 0, 0.235)], TONES[0].ink, INK, 0.8)));
+
+    // 2 · Право и ипотека — зона сделки: переговорный стол с двумя стульями и папкой с печатью.
+    floor.push([1.0, part(2, box(0.6, 0.43, 0.68, 0.48, 0.05) + box(0.5, 0.5, 0.76, 0.66, 0.09) +
+      I.poly([at(0.56, 0.54, 0.09), at(0.66, 0.54, 0.09), at(0.66, 0.62, 0.09), at(0.56, 0.62, 0.09)], WHITE, INK, 0.9) +
+      circleAt(0.62, 0.585, 0.09, 0.02, RED))]);
+    floor.push([1.35, part(2, box(0.6, 0.69, 0.68, 0.74, 0.05))]);
+
+    // 3 · Партнёрские сервисы — клиентская стойка у двери с тремя маркерами услуг.
+    floor.push([0.92, part(3, box(0.04, 0.72, 0.18, 0.82, 0.1) +
+      [0, 1, 2].map((k) => I.poly([at(0.065, 0.735 + k * 0.025, 0.1), at(0.085, 0.735 + k * 0.025, 0.1), at(0.085, 0.752 + k * 0.025, 0.1), at(0.065, 0.752 + k * 0.025, 0.1)],
+        [TONES[0].ink, TONES[0].right, TONES[0].left][k], INK, 0.6)).join(""))]);
+
+    // 4 · Центр управления — место руководителя: стол под окном, кресло, доска с цифрами.
+    base.push(part(4, wy(0.3, 0.5, 0.07, 0.25, WHITE) +
+      wy(0.33, 0.37, 0.09, 0.14, TONES[1].ink, "none", 0) +
+      wy(0.39, 0.43, 0.09, 0.18, TONES[1].ink, "none", 0) +
+      wy(0.45, 0.49, 0.09, 0.22, TONES[1].ink, "none", 0)));
+    floor.push([0.72, part(4, box(0.52, 0.06, 0.78, 0.2, 0.08, WHITE) + monitor(0.54, 0.08, 0.1))]);
+    floor.push([0.9, part(4, box(0.61, 0.25, 0.69, 0.31, 0.05, TONES[1].top, TONES[1].left, TONES[1].right) +
+      box(0.61, 0.3, 0.69, 0.32, 0.12, TONES[1].top, TONES[1].left, TONES[1].right))]);
+
+    // 5 · Франшизный отдел — связь с центром: терминал с красным пузырём чата и постоянная линия к блоку отдела.
+    floor.push([0.73, part(5, I.poly([at(0.66, 0.08, 0.08), at(0.76, 0.08, 0.08), at(0.76, 0.08, 0.17), at(0.66, 0.08, 0.17)], "#3A3C42", INK, 0.9) +
+      I.poly([at(0.68, 0.08, 0.19), at(0.75, 0.08, 0.19), at(0.75, 0.08, 0.24), at(0.7, 0.08, 0.24)], RED, "none", 0))]);
+    // Линия идёт по полу в зазоре между офисом и блоком отдела, чтобы её не закрывал блок.
+    const [la, lb] = I.p(X + L - 0.1, Y + L - 0.1, 0), [lc, ld] = I.p(2.05, 2.05, 0);
+    floor.push([2, part(5, `<line x1="${la.toFixed(1)}" y1="${lb.toFixed(1)}" x2="${lc.toFixed(1)}" y2="${ld.toFixed(1)}" stroke="${RED}" stroke-width="1.6"></line>` +
+      `<circle cx="${lc.toFixed(1)}" cy="${ld.toFixed(1)}" r="${(I.S * 0.022).toFixed(1)}" fill="${RED}"></circle>`)]);
+
+    // 6 · Найм — команда: второй стол агента и первые люди (руководитель за столом, два агента).
+    floor.push([0.64, part(6, box(0.2, 0.38, 0.42, 0.52, 0.08) + monitor(0.24, 0.4))]);
+    floor.push([0.62, part(6, person(0.31, 0.32))]);
+    floor.push([0.88, part(6, person(0.31, 0.58))]);
+    floor.push([0.95, part(6, person(0.65, 0.28, TONES[1].top), 7)]);
+
+    // 7 · Обучение: флипчарт у стены wx, у двери; руководитель переходит к нему.
+    const fx = 0.06;
+    floor.push([0.4, part(7,
+      I.line(at(fx, 0.29, 0.1), at(fx, 0.27, 0), INK, 1) + I.line(at(fx, 0.45, 0.1), at(fx, 0.47, 0), INK, 1) +
+      I.poly([at(fx, 0.27, 0.1), at(fx, 0.47, 0.1), at(fx, 0.47, 0.31), at(fx, 0.27, 0.31)], WHITE, INK, 1) +
+      `<polyline points="${[[0.3, 0.14], [0.35, 0.19], [0.39, 0.17], [0.44, 0.26]].map(([y, z]) => I.p(X + fx, Y + y, z).map((v) => v.toFixed(1)).join(",")).join(" ")}" fill="none" stroke="${TONES[2].ink}" stroke-width="1.4"></polyline>`)]);
+    floor.push([0.55, part(7, person(0.14, 0.4, TONES[1].top))]);
+
+    // Финал: вывеска горит, окно тёплое, клиент за переговорным столом.
+    base.push(part("final", wy(0.04, 0.42, 0.29, 0.405, WHITE, RED, 1.2) + sign(RED, "none") + wy(0.58, 0.8, 0.12, 0.32, "#FFE7A3") +
+      I.line(at(0.69, 0, 0.12), at(0.69, 0, 0.32), INK, 0.8)));
+    floor.push([1.45, part("final", person(0.64, 0.78, "#CFC9BE"))]);
+
     floor.sort((a, b) => a[0] - b[0]);
     return `<g class="iso-office">${base.join("")}${floor.map((f) => f[1]).join("")}</g>`;
   }
@@ -349,7 +384,11 @@
     });
     qsa(".office-part", root).forEach((g) => {
       const need = g.dataset.need;
-      g.classList.toggle("is-on", need === "final" ? final : Number(need) < built || final);
+      const until = g.dataset.until;
+      const shown = need === "final" ? final : Number(need) < built || final;
+      // data-until: деталь исчезает, когда подключён модуль с этим индексом (и в финале).
+      const gone = until !== undefined && (Number(until) < built || final);
+      g.classList.toggle("is-on", shown && !gone);
     });
     root.classList.toggle("is-final", final);
   }
@@ -358,9 +397,16 @@
     const small = (el) => (el?.clientWidth || 0) < 560;
     const hero = qs("#hero-iso");
     if (hero) {
-      // Первый экран: только офис и три зоны направлений; модули раскрываются в блоке «Система».
-      hero.innerHTML = buildIso({ labels: small(hero) ? "num" : "full", contourLabels: !small(hero), slotNumbers: false });
-      setIsoState(hero, 0, -1, false);
+      // Первый экран показывает готовый результат; ниже блок «Система» разбирает его по шагам.
+      const compact = small(hero);
+      hero.innerHTML = buildIso({
+        labels: compact ? "num" : "full",
+        contourLabels: !compact,
+        slotNumbers: false,
+        lit: true,
+        ...(compact ? { width: 620, height: 650, S: 160, ox: 310, oy: 170 } : {})
+      });
+      setIsoState(hero, Array.isArray(content.modules) ? content.modules.length : 8, -1, true);
     }
     const system = qs("#system-iso");
     if (system) {
@@ -413,6 +459,11 @@
       if (s.final) legend.textContent = `${pad(modules.length)} / ${pad(modules.length)} · все направления подключены`;
       else if (s.current >= 0) legend.textContent = `${pad(s.current + 1)} / ${pad(modules.length)} · Направление ${modules[s.current].contour + 1} · ${contours[modules[s.current].contour] || ""}`;
       else legend.textContent = `00 / ${pad(modules.length)} · только ваш офис`;
+    }
+    const note = qs("#system-office-note");
+    if (note) {
+      const text = s.final ? content.officeFinal : s.current >= 0 ? modules[s.current].officeNote : content.officeStart;
+      note.textContent = clean(text) ? `В офисе: ${clean(text)}` : "";
     }
     qsa(".step", qs("#system-steps")).forEach((step) => {
       const i = step.dataset.final ? -2 : Number(step.dataset.i);
