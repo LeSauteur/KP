@@ -1,6 +1,18 @@
 (() => {
   "use strict";
 
+  const proposalAnchors = new Set([
+    "#main-content", "#entry", "#system", "#network", "#services", "#results",
+    "#stories", "#team", "#launch", "#conditions", "#faq"
+  ]);
+  if (proposalAnchors.has(location.hash) || /^#note-\d+$/.test(location.hash)) {
+    const proposal = new URL("details/", location.href);
+    proposal.search = location.search;
+    proposal.hash = location.hash;
+    location.replace(proposal);
+    return;
+  }
+
   const heroes = {
     b: {
       title: "Свой офис недвижимости. Не с нуля.",

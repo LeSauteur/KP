@@ -2,12 +2,18 @@
   "use strict";
 
   const content = window.DOMIAN_CONTENT || {};
+  const siteRoot = new URL("../../", document.currentScript.src);
   const doc = document.documentElement;
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const desktopScene = window.matchMedia("(min-width: 1024px)");
   const qs = (selector, scope = document) => scope.querySelector(selector);
   const qsa = (selector, scope = document) => Array.from(scope.querySelectorAll(selector));
   const clean = (value) => String(value ?? "").trim();
+  const sitePath = (value) => {
+    const path = clean(value);
+    try { return new URL(path, siteRoot).href; }
+    catch { return path; }
+  };
   const escapeHtml = (value) => clean(value).replace(/[&<>'"]/g, (character) => ({
     "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;"
   })[character]);
@@ -478,7 +484,7 @@
     if (!root) return;
     root.innerHTML = modules.map((m, i) => {
       const artifact = m.artifact && clean(m.artifact.src)
-        ? `<div><dt>Доказательство</dt><dd><figure class="artifact"><img src="${escapeHtml(m.artifact.src)}" alt="${escapeHtml(m.artifact.alt)}" loading="lazy" decoding="async"><figcaption>${escapeHtml(m.artifact.caption)}</figcaption></figure></dd></div>`
+        ? `<div><dt>Доказательство</dt><dd><figure class="artifact"><img src="${escapeHtml(sitePath(m.artifact.src))}" alt="${escapeHtml(m.artifact.alt)}" loading="lazy" decoding="async"><figcaption>${escapeHtml(m.artifact.caption)}</figcaption></figure></dd></div>`
         : "";
       return `<article class="step" data-i="${i}">
         <p class="step-meta tone-${m.contour + 1}">${pad(i + 1)} / ${pad(modules.length)} · Направление ${m.contour + 1} · ${escapeHtml(contours[m.contour])}</p>
@@ -637,13 +643,13 @@
     const storySection = qs("#stories");
     if (storySection && stories.length) {
       storySection.hidden = false;
-      qs("#stories-list").innerHTML = stories.map((s) => `<article class="story">${clean(s.photo) ? `<img src="${escapeHtml(s.photo)}" alt="${escapeHtml(s.name)}" loading="lazy">` : ""}<blockquote>${escapeHtml(s.quote)}</blockquote><p><strong>${escapeHtml(s.name)}</strong> · ${escapeHtml(s.city)}${clean(s.since) ? ` · в сети с ${escapeHtml(s.since)}` : ""}</p>${clean(s.path) ? `<p class="story-path">${escapeHtml(s.path)}</p>` : ""}</article>`).join("");
+      qs("#stories-list").innerHTML = stories.map((s) => `<article class="story">${clean(s.photo) ? `<img src="${escapeHtml(sitePath(s.photo))}" alt="${escapeHtml(s.name)}" loading="lazy">` : ""}<blockquote>${escapeHtml(s.quote)}</blockquote><p><strong>${escapeHtml(s.name)}</strong> · ${escapeHtml(s.city)}${clean(s.since) ? ` · в сети с ${escapeHtml(s.since)}` : ""}</p>${clean(s.path) ? `<p class="story-path">${escapeHtml(s.path)}</p>` : ""}</article>`).join("");
     }
     const team = (content.team || []).filter((p) => clean(p.name) && clean(p.role));
     const people = qs("#team-people");
     if (people && team.length) {
       people.hidden = false;
-      people.innerHTML = `<p class="kicker">С вами будут работать</p>` + team.map((p) => `<div class="person">${clean(p.photo) ? `<img src="${escapeHtml(p.photo)}" alt="" loading="lazy">` : ""}<div><strong>${escapeHtml(p.name)}</strong><span>${escapeHtml(p.role)}${clean(p.stage) ? ` · ${escapeHtml(p.stage)}` : ""}</span>${clean(p.contact) ? `<span class="person-contact">${escapeHtml(p.contact)}</span>` : ""}</div></div>`).join("");
+      people.innerHTML = `<p class="kicker">С вами будут работать</p>` + team.map((p) => `<div class="person">${clean(p.photo) ? `<img src="${escapeHtml(sitePath(p.photo))}" alt="" loading="lazy">` : ""}<div><strong>${escapeHtml(p.name)}</strong><span>${escapeHtml(p.role)}${clean(p.stage) ? ` · ${escapeHtml(p.stage)}` : ""}</span>${clean(p.contact) ? `<span class="person-contact">${escapeHtml(p.contact)}</span>` : ""}</div></div>`).join("");
     }
     const after = qs("#after-request");
     if (after && Array.isArray(content.afterRequest)) {
@@ -668,7 +674,7 @@
     qsa("[data-pdf]").forEach((link) => {
       if (!path) { link.hidden = true; link.removeAttribute("href"); return; }
       link.hidden = false;
-      link.href = path;
+      link.href = sitePath(path);
       link.setAttribute("download", "");
     });
   }
